@@ -2,3 +2,7 @@ streamlit
 pandas
 openpyxl
 streamlit-echarts
+requests
+openpyxl
+supabase
+werkzeug.security
