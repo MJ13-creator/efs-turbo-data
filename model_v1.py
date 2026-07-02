@@ -1462,10 +1462,12 @@ def page_dashboard():
     auto_roi   = round(sum(float(i.get("roi",0) or 0) for i in ideas if i.get("automation_category","") in AUTOMATION_CATS),1)
     ai_roi     = round(sum(float(i.get("roi",0) or 0) for i in ideas if i.get("automation_category","") in AI_CATS),1)
 
-    query_params = st.experimental_get_query_params()
-    selected_category = query_params.get("selected_category", [""])[0]
+    if "selected_category" not in st.session_state:
+        st.session_state["selected_category"] = ""
+    selected_category = st.session_state["selected_category"]
     if selected_category not in AUTO_CATS:
         selected_category = ""
+        st.session_state["selected_category"] = ""
 
     def _cat_stats(cat):
         subset = [i for i in ideas if i.get("automation_category") == cat]
@@ -1524,9 +1526,8 @@ def page_dashboard():
         </div>'''
 
     html_buttons_left = "".join([
-        '<div class="cat-card {}" onclick="selectCategory(\'{}\')">'.format(
+        '<div class="cat-card {}">'.format(
             'selected' if selected_category == item['cat'] else '',
-            item['cat']
         ) +
         '<div class="cat-icon">{}</div>'.format(CATEGORY_ICONS.get(item['cat'], '●')) +
         '<div class="cat-body"><div class="cat-label">{}</div>'.format(item['label']) +
@@ -1534,9 +1535,8 @@ def page_dashboard():
         for item in left_buttons
     ])
     html_buttons_right = "".join([
-        '<div class="cat-card {}" onclick="selectCategory(\'{}\')">'.format(
+        '<div class="cat-card {}">'.format(
             'selected' if selected_category == item['cat'] else '',
-            item['cat']
         ) +
         '<div class="cat-icon">{}</div>'.format(CATEGORY_ICONS.get(item['cat'], '●')) +
         '<div class="cat-body"><div class="cat-label">{}</div>'.format(item['label']) +
@@ -1635,14 +1635,6 @@ body,html{{margin:0;padding:0;}}
     <div class="cat-list">{html_buttons_right}</div>
   </div>
 </div>
-<script>
-function selectCategory(cat){{
-  const params = new URLSearchParams(window.location.search);
-  if (params.get('selected_category') === cat) {{ params.delete('selected_category'); }}
-  else {{ params.set('selected_category', cat); }}
-  window.location.search = params.toString();
-}}
-</script>
 </body></html>'''
 
     st.components.v1.html(canvas_html, height=520, scrolling=False)
