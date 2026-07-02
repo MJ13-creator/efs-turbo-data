@@ -1542,6 +1542,14 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
 .tagline{{font-size:12px;color:rgba(255,255,255,.7);text-align:center;
           margin-bottom:12px;line-height:1.6;letter-spacing:.2px;}}
 .tagline b{{color:rgba(255,255,255,.95);}}
+#running-board{{position:absolute;top:18px;left:36px;right:36px;height:86px;overflow:hidden;z-index:6;}}
+.board-track{{display:flex;gap:12px;width:max-content;animation:scroll-left 22s linear infinite;}}
+.board-copy{{display:flex;gap:12px;}}
+.board-chip{{flex:0 0 240px;min-width:240px;padding:14px 18px;border-radius:18px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(14px);box-shadow:0 18px 45px rgba(15,23,42,.2);}}
+.board-label{{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.72);margin-bottom:8px;}}
+.board-value{{font-size:20px;font-weight:800;color:#fff;line-height:1.05;}}
+.board-sub{{font-size:11px;color:rgba(255,255,255,.7);margin-top:6px;}}
+@keyframes scroll-left{{0%{{transform:translateX(0);}}100%{{transform:translateX(-50%);}}}}
 #nexbot-wrap{{
   width:260px;height:260px;cursor:crosshair;overflow:hidden;
   border-radius:50%;
@@ -1580,16 +1588,57 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
 <body>
 <div id="scene">
 
-  <!-- LEFT -->
+  <div id="running-board">
+    <div class="board-track">
+      <div class="board-copy">
+        <div class="board-chip">
+          <div class="board-label">Automation Ideas</div>
+          <div class="board-value">{auto_total}</div>
+          <div class="board-sub">Overall automation ideas</div>
+        </div>
+        <div class="board-chip">
+          <div class="board-label">AI Ideas</div>
+          <div class="board-value">{ai_total}</div>
+          <div class="board-sub">Overall AI ideas</div>
+        </div>
+        <div class="board-chip">
+          <div class="board-label">Automation ROI</div>
+          <div class="board-value">{auto_roi}</div>
+          <div class="board-sub">Total automation ROI</div>
+        </div>
+        <div class="board-chip">
+          <div class="board-label">AI ROI</div>
+          <div class="board-value">{ai_roi}</div>
+          <div class="board-sub">Total AI ROI</div>
+        </div>
+      </div>
+      <div class="board-copy">
+        <div class="board-chip">
+          <div class="board-label">Automation Ideas</div>
+          <div class="board-value">{auto_total}</div>
+          <div class="board-sub">Overall automation ideas</div>
+        </div>
+        <div class="board-chip">
+          <div class="board-label">AI Ideas</div>
+          <div class="board-value">{ai_total}</div>
+          <div class="board-sub">Overall AI ideas</div>
+        </div>
+        <div class="board-chip">
+          <div class="board-label">Automation ROI</div>
+          <div class="board-value">{auto_roi}</div>
+          <div class="board-sub">Total automation ROI</div>
+        </div>
+        <div class="board-chip">
+          <div class="board-label">AI ROI</div>
+          <div class="board-value">{ai_roi}</div>
+          <div class="board-sub">Total AI ROI</div>
+        </div>
+      </div>
+    </div>
+  </div>
   <div class="panel">
     <div class="ptitle" style="color:#c084fc;text-shadow:0 0 18px #c084fc88;">AUTOMATION</div>
-    <div class="psub" style="color:#c084fc;">\u2699\ufe0f Robotic Process &amp; Workflow</div>
-    <div class="stats">
-      <div class="stat"><div class="stat-v" style="color:#c084fc;">{auto_total}</div><div class="stat-l">TOTAL</div></div>
-      <div class="stat"><div class="stat-v" style="color:#4ade80;">{auto_done}</div><div class="stat-l">DONE</div></div>
-      <div class="stat"><div class="stat-v" style="color:#38bdf8;">{auto_wip}</div><div class="stat-l">WIP</div></div>
-      <div class="stat"><div class="stat-v" style="color:#facc15;">{auto_roi}</div><div class="stat-l">ROI</div></div>
-    </div>
+    <div class="psub" style="color:#c084fc;">⚙️ Robotic Process &amp; Workflow</div>
     <div class="category-grid">{left_category_html}</div>
   </div>
 
@@ -1648,12 +1697,6 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
   <div class="panel right">
     <div class="ptitle" style="color:#38bdf8;text-shadow:0 0 18px #38bdf888;">AI</div>
     <div class="psub" style="color:#38bdf8;">🧠 Cognitive Intelligence &amp; ML</div>
-    <div class="stats">
-      <div class="stat"><div class="stat-v" style="color:#38bdf8;">{ai_total}</div><div class="stat-l">TOTAL</div></div>
-      <div class="stat"><div class="stat-v" style="color:#4ade80;">{ai_done}</div><div class="stat-l">DONE</div></div>
-      <div class="stat"><div class="stat-v" style="color:#c084fc;">{ai_wip}</div><div class="stat-l">WIP</div></div>
-      <div class="stat"><div class="stat-v" style="color:#facc15;">{ai_roi}</div><div class="stat-l">ROI</div></div>
-    </div>
     <div class="category-grid">{right_category_html}</div>
   </div>
 
