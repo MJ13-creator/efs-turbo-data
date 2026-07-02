@@ -1425,12 +1425,18 @@ def page_dashboard():
     auto_roi = round(sum(float(i.get("roi",0) or 0) for i in ideas if i.get("automation_category","") in AUTOMATION_CATS),1)
     ai_roi = round(sum(float(i.get("roi",0) or 0) for i in ideas if i.get("automation_category","") in AI_CATS),1)
 
+    icon_total = KPI_ILLUSTRATIONS["total_ideas"]
+    icon_completed = KPI_ILLUSTRATIONS["trophy"]
+    icon_hours = KPI_ILLUSTRATIONS["clock"]
+    icon_roi = KPI_ILLUSTRATIONS["growth"]
     st.markdown(f"""
     <style>
       .km-board{{position:relative;overflow:hidden;margin-bottom:22px;border-radius:24px;border:1px solid rgba(255,255,255,.12);background:rgba(15,23,42,.85);box-shadow:0 18px 50px rgba(15,23,42,.25);}}
       .km-track{{display:flex;gap:12px;width:max-content;animation:km-scroll-left 20s linear infinite;}}
       .km-copy{{display:flex;gap:12px;}}
       .km-card{{flex:0 0 250px;min-width:250px;padding:18px 20px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);}}
+      .km-icon{{width:40px;height:40px;margin-bottom:14px;}}
+      .km-icon svg{{width:100%;height:100%;}}
       .km-label{{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.72);margin-bottom:8px;}}
       .km-value{{font-size:20px;font-weight:800;color:#fff;line-height:1.1;}}
       .km-sub{{font-size:11px;color:rgba(255,255,255,.68);margin-top:6px;}}
@@ -1439,34 +1445,20 @@ def page_dashboard():
     <div class="km-board">
       <div class="km-track">
         <div class="km-copy">
-          <div class="km-card"><div class="km-label">Total Ideas</div><div class="km-value">{total}</div><div class="km-sub">All ideas in the current view</div></div>
-          <div class="km-card"><div class="km-label">Completed</div><div class="km-value">{completed}</div><div class="km-sub">Ideas marked completed</div></div>
-          <div class="km-card"><div class="km-label">Total Hrs Saved / yr</div><div class="km-value">{cust_hrs+int_hrs:,.0f}</div><div class="km-sub">Customer + Internal hours</div></div>
-          <div class="km-card"><div class="km-label">Total ROI</div><div class="km-value">{cust_roi+int_roi}</div><div class="km-sub">Customer + Internal ROI</div></div>
+          <div class="km-card"><div class="km-icon" style="color:#1a4fad;">{icon_total}</div><div class="km-label">Total Ideas</div><div class="km-value">{total}</div><div class="km-sub">All ideas in the current view</div></div>
+          <div class="km-card"><div class="km-icon" style="color:#059669;">{icon_completed}</div><div class="km-label">Completed</div><div class="km-value">{completed}</div><div class="km-sub">Ideas marked completed</div></div>
+          <div class="km-card"><div class="km-icon" style="color:#0d9488;">{icon_hours}</div><div class="km-label">Total Hrs Saved / yr</div><div class="km-value">{cust_hrs+int_hrs:,.0f}</div><div class="km-sub">Customer + Internal hours</div></div>
+          <div class="km-card"><div class="km-icon" style="color:#b45309;">{icon_roi}</div><div class="km-label">Total ROI</div><div class="km-value">{cust_roi+int_roi}</div><div class="km-sub">Customer + Internal ROI</div></div>
         </div>
         <div class="km-copy">
-          <div class="km-card"><div class="km-label">Total Ideas</div><div class="km-value">{total}</div><div class="km-sub">All ideas in the current view</div></div>
-          <div class="km-card"><div class="km-label">Completed</div><div class="km-value">{completed}</div><div class="km-sub">Ideas marked completed</div></div>
-          <div class="km-card"><div class="km-label">Total Hrs Saved / yr</div><div class="km-value">{cust_hrs+int_hrs:,.0f}</div><div class="km-sub">Customer + Internal hours</div></div>
-          <div class="km-card"><div class="km-label">Total ROI</div><div class="km-value">{cust_roi+int_roi}</div><div class="km-sub">Customer + Internal ROI</div></div>
+          <div class="km-card"><div class="km-icon" style="color:#1a4fad;">{icon_total}</div><div class="km-label">Total Ideas</div><div class="km-value">{total}</div><div class="km-sub">All ideas in the current view</div></div>
+          <div class="km-card"><div class="km-icon" style="color:#059669;">{icon_completed}</div><div class="km-label">Completed</div><div class="km-value">{completed}</div><div class="km-sub">Ideas marked completed</div></div>
+          <div class="km-card"><div class="km-icon" style="color:#0d9488;">{icon_hours}</div><div class="km-label">Total Hrs Saved / yr</div><div class="km-value">{cust_hrs+int_hrs:,.0f}</div><div class="km-sub">Customer + Internal hours</div></div>
+          <div class="km-card"><div class="km-icon" style="color:#b45309;">{icon_roi}</div><div class="km-label">Total ROI</div><div class="km-value">{cust_roi+int_roi}</div><div class="km-sub">Customer + Internal ROI</div></div>
         </div>
       </div>
     </div>
     """, unsafe_allow_html=True)
-
-    c1,c2,c3,c4 = st.columns(4)
-    with c1:
-        premium_kpi_card(total, "Total Ideas", "#1a4fad",
-                          f"{completed} completed · {cnt('Rejected')} rejected", "total_ideas")
-    with c2:
-        premium_kpi_card(completed, "Completed", "#059669",
-                          f"{round(completed/total*100,1) if total else 0}% completion rate", "trophy")
-    with c3:
-        premium_kpi_card(f"{cust_hrs+int_hrs:,.0f} hrs", "Total Hrs Saved / yr", "#0d9488",
-                          f"Customer {cust_hrs:,.0f} · Internal {int_hrs:,.0f}", "clock")
-    with c4:
-        premium_kpi_card(round(cust_roi+int_roi,1), "Total ROI", "#b45309",
-                          f"Customer {cust_roi} · Internal {int_roi}", "growth")
 
     # second KPI row removed
 
