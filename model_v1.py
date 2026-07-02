@@ -1450,7 +1450,7 @@ def page_dashboard():
 
     # second KPI row removed
 
-    # -- ROW 2: Cinematic Automation | AI Canvas (exact reference image match) --
+    # -- ROW 2: Automation | AI Canvas with wavy background --
     st.markdown("##### \U0001f916 Automation &amp; AI Category Breakdown")
 
     auto_total = len([i for i in ideas if i.get("automation_category","") in AUTOMATION_CATS])
@@ -1462,9 +1462,10 @@ def page_dashboard():
     auto_roi   = round(sum(float(i.get("roi",0) or 0) for i in ideas if i.get("automation_category","") in AUTOMATION_CATS),1)
     ai_roi     = round(sum(float(i.get("roi",0) or 0) for i in ideas if i.get("automation_category","") in AI_CATS),1)
 
-    if "selected_category" not in st.session_state:
-        st.session_state["selected_category"] = ""
-    selected_category = st.session_state["selected_category"]
+    query_params = st.experimental_get_query_params()
+    selected_category = query_params.get("selected_category", [""])[0]
+    if selected_category not in AUTO_CATS:
+        selected_category = ""
 
     def _cat_stats(cat):
         subset = [i for i in ideas if i.get("automation_category") == cat]
@@ -1476,64 +1477,177 @@ def page_dashboard():
         hrs = round(sum(idea_hours(i) for i in subset),1)
         return total, completed, wip, uat, roi, hrs
 
-    left_col, center_col, right_col = st.columns([1,1.4,1])
+    left_buttons = []
+    right_buttons = []
+    for cat in AUTOMATION_CATS:
+        count = len([i for i in ideas if i.get("automation_category") == cat])
+        label = cat.split("-",1)[-1]
+        left_buttons.append({"cat":cat,"label":label,"count":count})
+    for cat in AI_CATS:
+        count = len([i for i in ideas if i.get("automation_category") == cat])
+        label = cat.split("-",1)[-1]
+        right_buttons.append({"cat":cat,"label":label,"count":count})
 
-    with left_col:
-        st.markdown('<div class="category-panel">', unsafe_allow_html=True)
-        st.markdown('<h4>AUTOMATION</h4><p>Robotic Process & Workflow</p>', unsafe_allow_html=True)
-        for cat in AUTOMATION_CATS:
-            count = len([i for i in ideas if i.get("automation_category") == cat])
-            label = cat.split("-",1)[-1]
-            if st.button(f"{label} ({count})", key=f"auto_cat_{cat}", use_container_width=True):
-                st.session_state["selected_category"] = cat
-                touch_activity()
-                st.rerun()
-        if selected_category in AUTOMATION_CATS:
-            st.markdown(f'<div style="margin-top:12px;font-size:12px;color:#c084fc;">Selected: <strong>{selected_category.split("-",1)[-1]}</strong></div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with right_col:
-        st.markdown('<div class="category-panel">', unsafe_allow_html=True)
-        st.markdown('<h4>AI</h4><p>Cognitive Intelligence & ML</p>', unsafe_allow_html=True)
-        for cat in AI_CATS:
-            count = len([i for i in ideas if i.get("automation_category") == cat])
-            label = cat.split("-",1)[-1]
-            if st.button(f"{label} ({count})", key=f"ai_cat_{cat}", use_container_width=True):
-                st.session_state["selected_category"] = cat
-                touch_activity()
-                st.rerun()
-        if selected_category in AI_CATS:
-            st.markdown(f'<div style="margin-top:12px;font-size:12px;color:#38bdf8;">Selected: <strong>{selected_category.split("-",1)[-1]}</strong></div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with center_col:
-        if selected_category:
-            total, completed, wip, uat, roi, hrs = _cat_stats(selected_category)
-            color = AUTO_CAT_COLORS.get(selected_category, "#7c3aed")
-            label = selected_category.split("-",1)[-1]
-            center_html = f'''
-            <div class="middle-circle" style="background:radial-gradient(circle at 35% 20%,{color}22 0%,#0f172a 45%,#080b13 100%);">
-              <div class="circle-inner">
-                <div class="circle-title" style="color:{color};">{label}</div>
-                <div class="circle-value">{total}</div>
-                <span class="circle-label">IDEAS SELECTED</span>
-                <div class="circle-meta">ROI <strong>{roi}</strong> · {hrs:,.0f} hrs saved
-                  <span>{completed} Done · {wip} WIP · {uat} UAT</span>
-                </div>
+    center_html = ""
+    if selected_category:
+        total, completed, wip, uat, roi, hrs = _cat_stats(selected_category)
+        color = AUTO_CAT_COLORS.get(selected_category, "#7c3aed")
+        label = selected_category.split("-",1)[-1]
+        center_html = f'''
+        <div class="centre">
+          <div class="tagline">
+            <span style="color:rgba(255,255,255,.6);">Selected category details</span>
+          </div>
+          <div class="middle-circle" style="background:radial-gradient(circle at 35% 20%,{color}22 0%,#0f172a 45%,#080b13 100%);">
+            <div class="circle-inner">
+              <div class="circle-title" style="color:{color};">{label}</div>
+              <div class="circle-value">{total}</div>
+              <span class="circle-label">IDEAS SELECTED</span>
+              <div class="circle-meta">ROI <strong>{roi}</strong> · {hrs:,.0f} hrs saved
+                <span>{completed} Done · {wip} WIP · {uat} UAT</span>
               </div>
-            </div>'''
-        else:
-            center_html = '''
-            <div class="middle-circle">
-              <div class="circle-inner">
-                <div class="circle-title">Select a category</div>
-                <div class="circle-meta">Click any Automation or AI category on the left or right to show its details here.</div>
-              </div>
-            </div>'''
-        st.markdown(center_html, unsafe_allow_html=True)
+            </div>
+          </div>
+        </div>'''
+    else:
+        center_html = '''
+        <div class="centre">
+          <div class="tagline">
+            <span style="color:rgba(255,255,255,.6);">Click a category to view the details</span>
+          </div>
+          <div class="middle-circle">
+            <div class="circle-inner">
+              <div class="circle-title">Select a category</div>
+              <div class="circle-meta">Automation and AI categories are shown on the left and right panels.</div>
+            </div>
+          </div>
+        </div>'''
 
-    # ── ROW 3: Charts row (Status BAR chart + Customer pie + clean Hours/Project) ─
-    st.markdown("##### 📈 Charts")
+    html_buttons_left = "".join([
+        '<div class="cat-card {}" onclick="selectCategory(\'{}\')">'.format(
+            'selected' if selected_category == item['cat'] else '',
+            item['cat']
+        ) +
+        '<div class="cat-icon">{}</div>'.format(CATEGORY_ICONS.get(item['cat'], '●')) +
+        '<div class="cat-body"><div class="cat-label">{}</div>'.format(item['label']) +
+        '<div class="cat-count">{} ideas</div></div></div>'.format(item['count'])
+        for item in left_buttons
+    ])
+    html_buttons_right = "".join([
+        '<div class="cat-card {}" onclick="selectCategory(\'{}\')">'.format(
+            'selected' if selected_category == item['cat'] else '',
+            item['cat']
+        ) +
+        '<div class="cat-icon">{}</div>'.format(CATEGORY_ICONS.get(item['cat'], '●')) +
+        '<div class="cat-body"><div class="cat-label">{}</div>'.format(item['label']) +
+        '<div class="cat-count">{} ideas</div></div></div>'.format(item['count'])
+        for item in right_buttons
+    ])
+
+    canvas_html = f'''<!DOCTYPE html>
+<html><head><meta charset="utf-8"/>
+<style>
+*{{margin:0;padding:0;box-sizing:border-box;}}
+html,body{{width:100%;height:100%;overflow:hidden;background:#020617;font-family:'Inter',sans-serif;}}
+#scene{{position:relative;width:100%;height:440px;background:radial-gradient(circle at 20% 20%,rgba(124,58,237,.2),transparent 32%),linear-gradient(180deg,#030712 0%,#070b18 58%,#04070e 100%);overflow:hidden;display:flex;align-items:center;justify-content:space-between;padding:20px 36px;}}
+#scene::after{{content:'';position:absolute;left:0;right:0;bottom:0;height:52%;background:linear-gradient(180deg,rgba(255,255,255,0.05),transparent 80%),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px);background-size:30px 30px;pointer-events:none;z-index:0;}}
+.panel{{flex:0 0 28%;position:relative;z-index:2;display:flex;flex-direction:column;gap:14px;}}
+.panel.left{{align-items:flex-start;}}
+.panel.right{{align-items:flex-end;text-align:right;}}
+.ptitle{{font-size:13px;font-weight:900;letter-spacing:4px;text-transform:uppercase;margin-bottom:4px;}}
+.psub{{font-size:11px;color:rgba(226,232,240,.82);margin-bottom:12px;}}
+.stats{{display:flex;gap:8px;flex-wrap:wrap;}}
+.stat{{display:flex;flex-direction:column;align-items:center;min-width:58px;padding:8px 10px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);}}
+.stat-v{{font-size:16px;font-weight:800;color:#fff;}}
+.stat-l{{font-size:8px;color:rgba(148,163,184,.8);letter-spacing:.08em;text-transform:uppercase;margin-top:4px;}}
+.cat-list{{display:grid;gap:10px;}}
+.cat-card{{display:flex;align-items:center;gap:10px;padding:14px;border-radius:18px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);cursor:pointer;transition:transform .15s ease,background .15s ease;}}
+.cat-card:hover{{transform:translateX(2px);background:rgba(255,255,255,.08);}}
+.cat-card.selected{{background:linear-gradient(135deg,#7c3aed 18%,#38bdf8 100%);border-color:rgba(255,255,255,.2);}}
+.cat-icon{{width:34px;height:34px;border-radius:12px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:16px;}}
+.cat-card.selected .cat-icon{{background:rgba(255,255,255,.18);}}
+.cat-body{{display:flex;flex-direction:column;gap:4px;}}
+.cat-label{{font-size:13px;font-weight:700;color:#fff;}}
+.cat-count{{font-size:11px;color:rgba(226,232,240,.74);}}
+.centre{{flex:0 0 32%;position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;}}
+.tagline{{font-size:12px;color:rgba(226,232,240,.72);text-align:center;letter-spacing:.08em;}}
+.middle-circle{{width:280px;height:280px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 30% 30%,rgba(59,130,246,.18),rgba(15,23,42,.98) 65%);box-shadow:0 18px 60px rgba(0,0,0,.3),inset 0 0 0 1px rgba(255,255,255,.05);}}
+.middle-circle::before{{content:'';position:absolute;inset:24px;border-radius:50%;border:1px dashed rgba(255,255,255,.12);}}
+.circle-inner{{position:relative;z-index:1;padding:22px;text-align:center;max-width:220px;}}
+.circle-title{{font-size:18px;font-weight:800;color:#fff;}}
+.circle-value{{font-size:36px;font-weight:900;color:#fff;margin:10px 0 6px;}}
+.circle-label{{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#94a3b8;margin-bottom:10px;display:block;}}
+.circle-meta{{font-size:13px;line-height:1.6;color:rgba(226,232,240,.88);}}
+.circle-meta span{{display:block;margin-top:8px;font-weight:600;color:rgba(255,255,255,.85);}}
+.wave-wrap{{position:absolute;top:50%;z-index:1;pointer-events:none;}}
+.wave-left{{left:12%;transform:translateY(-50%);}}
+.wave-right{{right:12%;transform:translateY(-50%);}}
+.wave-svg{{width:150px;height:80px;overflow:visible;}}
+body,html{{margin:0;padding:0;}}
+</style>
+</head><body>
+<div id="scene">
+  <div class="panel left">
+    <div class="ptitle" style="color:#c084fc;">AUTOMATION</div>
+    <div class="psub">⚙️ Robotic Process &amp; Workflow</div>
+    <div class="stats">
+      <div class="stat"><div class="stat-v">{auto_total}</div><div class="stat-l">Total</div></div>
+      <div class="stat"><div class="stat-v">{auto_done}</div><div class="stat-l">Done</div></div>
+      <div class="stat"><div class="stat-v">{auto_wip}</div><div class="stat-l">WIP</div></div>
+      <div class="stat"><div class="stat-v">{auto_roi}</div><div class="stat-l">ROI</div></div>
+    </div>
+    <div class="cat-list">{html_buttons_left}</div>
+  </div>
+
+  <div class="wave-wrap wave-left">
+    <svg class="wave-svg" viewBox="0 0 150 80">
+      <defs><filter id="gp"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+      <path d="M0 40 Q37 10,75 40 Q113 70,150 40" stroke="#c084fc" stroke-width="2.5" fill="none" filter="url(#gp)" opacity=".9"/>
+      <path d="M0 40 Q37 25,75 40 Q113 55,150 40" stroke="#7c3aed" stroke-width="1.5" fill="none" filter="url(#gp)" opacity=".6"/>
+      <circle r="3.5" fill="#c084fc" opacity=".95"/>
+      <circle r="2.5" fill="#e879f9" opacity=".8"/>
+      <circle r="2" fill="#a855f7" opacity=".6"/>
+    </svg>
+  </div>
+
+  {center_html}
+
+  <div class="wave-wrap wave-right">
+    <svg class="wave-svg" viewBox="0 0 150 80">
+      <defs><filter id="gc"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+      <path d="M0 40 Q37 70,75 40 Q113 10,150 40" stroke="#38bdf8" stroke-width="2.5" fill="none" filter="url(#gc)" opacity=".9"/>
+      <path d="M0 40 Q37 55,75 40 Q113 25,150 40" stroke="#0ea5e9" stroke-width="1.5" fill="none" filter="url(#gc)" opacity=".6"/>
+      <circle r="3.5" fill="#38bdf8" opacity=".95"/>
+      <circle r="2.5" fill="#7dd3fc" opacity=".8"/>
+      <circle r="2" fill="#0ea5e9" opacity=".6"/>
+    </svg>
+  </div>
+
+  <div class="panel right">
+    <div class="ptitle" style="color:#38bdf8;">AI</div>
+    <div class="psub">🧠 Cognitive Intelligence &amp; ML</div>
+    <div class="stats">
+      <div class="stat"><div class="stat-v">{ai_total}</div><div class="stat-l">Total</div></div>
+      <div class="stat"><div class="stat-v">{ai_done}</div><div class="stat-l">Done</div></div>
+      <div class="stat"><div class="stat-v">{ai_wip}</div><div class="stat-l">WIP</div></div>
+      <div class="stat"><div class="stat-v">{ai_roi}</div><div class="stat-l">ROI</div></div>
+    </div>
+    <div class="cat-list">{html_buttons_right}</div>
+  </div>
+</div>
+<script>
+function selectCategory(cat){{
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('selected_category') === cat) {{ params.delete('selected_category'); }}
+  else {{ params.set('selected_category', cat); }}
+  window.location.search = params.toString();
+}}
+</script>
+</body></html>'''
+
+    st.components.v1.html(canvas_html, height=520, scrolling=False)
+
+    # ── ROW 3: Charts row (Status BAR chart + Customer pie + clean Hours/Project) ─    st.markdown("##### 📈 Charts")
     ch1, ch2, ch3 = st.columns(3)
 
     with ch1:
