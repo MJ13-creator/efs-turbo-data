@@ -1451,6 +1451,62 @@ def page_dashboard():
     auto_roi   = round(sum(float(i.get("roi",0) or 0) for i in ideas if i.get("automation_category","") in AUTOMATION_CATS),1)
     ai_roi     = round(sum(float(i.get("roi",0) or 0) for i in ideas if i.get("automation_category","") in AI_CATS),1)
 
+    selected_category = ""
+    if hasattr(st, "query_params"):
+        qp = st.query_params
+        if qp and qp.get("selected_category"):
+            selected_category = qp.get("selected_category", [""])[0]
+    if selected_category and selected_category not in AUTOMATION_CATS + AI_CATS:
+        selected_category = ""
+
+    def _cat_stats(cat):
+        subset = [i for i in ideas if i.get("automation_category") == cat]
+        total = len(subset)
+        completed = len([i for i in subset if i.get("status") == "Completed"])
+        wip = len([i for i in subset if i.get("status") == "WIP"])
+        uat = len([i for i in subset if i.get("status") == "UAT"])
+        roi = round(sum(float(i.get("roi",0) or 0) for i in subset),1)
+        hrs = round(sum(idea_hours(i) for i in subset),1)
+        return total, completed, wip, uat, roi, hrs
+
+    def _category_card(cat):
+        count = len([i for i in ideas if i.get("automation_category") == cat])
+        label = cat.split("-",1)[-1]
+        icon = CATEGORY_ICONS.get(cat, "•")
+        active = "selected" if selected_category == cat else ""
+        return (
+            f'<div class="category-card {active}" onclick="selectCategory(\'{cat}\')">'
+            f'<div class="category-icon">{icon}</div>'
+            f'<div class="category-body">'
+            f'<div class="category-name">{label}</div>'
+            f'<div class="category-count">{count} ideas</div>'
+            '</div></div>'
+        )
+
+    left_category_html = "".join(_category_card(cat) for cat in AUTOMATION_CATS)
+    right_category_html = "".join(_category_card(cat) for cat in AI_CATS)
+
+    if selected_category:
+        total, completed, wip, uat, roi, hrs = _cat_stats(selected_category)
+        selected_label = selected_category.split("-",1)[-1]
+        selected_detail_html = f'''
+          <div class="detail-overlay">
+            <div class="detail-card">
+              <div class="detail-title">{selected_label}</div>
+              <div class="detail-value">{total}</div>
+              <div class="detail-meta">ROI <strong>{roi}</strong> · {hrs:,.0f} hrs saved</div>
+              <div class="detail-sub">{completed} Done · {wip} WIP · {uat} UAT</div>
+            </div>
+          </div>'''
+    else:
+        selected_detail_html = '''
+          <div class="detail-overlay">
+            <div class="detail-card">
+              <div class="detail-title">Select a category</div>
+              <div class="detail-sub">Click any Automation or AI category to show details here.</div>
+            </div>
+          </div>'''
+
     _canvas_html = f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8"/>
 <script type="module" src="https://unpkg.com/@splinetool/viewer@1.0.77/build/spline-viewer.js"></script>
@@ -1493,6 +1549,23 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
   position:relative;z-index:5;
   background:radial-gradient(circle,#0d0525 30%,#030712 100%);
 }}
+.category-grid{{display:grid;gap:10px;}}
+.category-card{{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:18px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);cursor:pointer;transition:transform .18s ease,background .18s ease,border-color .18s ease;
+}}
+.category-card:hover{{transform:translateY(-1px);background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.18);}}
+.category-card.selected{{background:linear-gradient(135deg,rgba(56,189,248,.18),rgba(124,58,237,.18));border-color:rgba(56,189,248,.35);}}
+.category-icon{{width:38px;height:38px;border-radius:14px;display:grid;place-items:center;
+  background:rgba(255,255,255,.08);color:#fff;font-size:18px;}}
+.category-body{{display:flex;flex-direction:column;gap:3px;}}
+.category-name{{font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#fff;}}
+.category-count{{font-size:10px;color:rgba(255,255,255,.7);}}
+.detail-overlay{{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}}
+.detail-card{{width:min(220px,90%);padding:16px 18px;border-radius:22px;background:rgba(8,12,30,.92);border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(8px);box-shadow:0 18px 80px rgba(15,23,42,.35);text-align:center;}}
+.detail-title{{font-size:15px;font-weight:800;color:#f8fafc;margin-bottom:6px;}}
+.detail-value{{font-size:28px;font-weight:900;color:#e0e7ff;margin-bottom:6px;}}
+.detail-meta{{font-size:11px;color:rgba(148,163,184,.95);margin-bottom:4px;}}
+.detail-sub{{font-size:11px;color:rgba(148,163,184,.75);line-height:1.4;}}
 .gring1{{width:200px;height:12px;border-radius:50%;margin-top:-4px;
   background:radial-gradient(ellipse,rgba(124,58,237,.55) 0%,transparent 70%);
   box-shadow:0 0 28px rgba(124,58,237,.4);}}
@@ -1517,24 +1590,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
       <div class="stat"><div class="stat-v" style="color:#38bdf8;">{auto_wip}</div><div class="stat-l">WIP</div></div>
       <div class="stat"><div class="stat-v" style="color:#facc15;">{auto_roi}</div><div class="stat-l">ROI</div></div>
     </div>
-    <!-- Robotic arm SVG on purple pedestal -->
-    <svg width="130" height="170" viewBox="0 0 130 170" fill="none">
-      <ellipse cx="65" cy="158" rx="50" ry="11" fill="none" stroke="#7c3aed" stroke-width="2" opacity=".5"/>
-      <ellipse cx="65" cy="158" rx="58" ry="13" fill="none" stroke="#c084fc" stroke-width="1" opacity=".25"/>
-      <ellipse cx="65" cy="158" rx="42" ry="9"  fill="rgba(192,132,252,0.15)"/>
-      <rect x="52" y="136" width="26" height="26" rx="5" fill="#2d1154"/>
-      <rect x="48" y="127" width="34" height="13" rx="4" fill="#3b155e"/>
-      <rect x="60" y="78" width="13" height="53" rx="5" fill="#4a1a75" transform="rotate(-10 65 105)"/>
-      <circle cx="68" cy="78" r="9" fill="#5b1f8c"/>
-      <rect x="57" y="34" width="13" height="48" rx="5" fill="#5b1f8c" transform="rotate(15 65 58)"/>
-      <circle cx="62" cy="34" r="10" fill="#7c3aed"/>
-      <line x1="70" y1="20" x2="57" y2="8"  stroke="#c084fc" stroke-width="4" stroke-linecap="round"/>
-      <line x1="70" y1="20" x2="83" y2="7"  stroke="#c084fc" stroke-width="4" stroke-linecap="round"/>
-      <line x1="70" y1="20" x2="70" y2="4"  stroke="#c084fc" stroke-width="4" stroke-linecap="round"/>
-      <ellipse cx="65" cy="160" rx="38" ry="7" fill="rgba(124,58,237,0.3)"/>
-      <rect x="24" y="148" width="82" height="17" rx="4" fill="rgba(124,58,237,0.45)"/>
-      <text x="65" y="161" text-anchor="middle" fill="#c084fc" font-size="9" font-weight="800" letter-spacing="2">AUTOMATION</text>
-    </svg>
+    <div class="category-grid">{left_category_html}</div>
   </div>
 
   <!-- WAVE LEFT -->
@@ -1566,6 +1622,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
         url="https://prod.spline.design/kZDDjO5HmRHKWMYo/scene.splinecode"
         style="width:260px;height:260px;display:block;" loading-anim="true">
       </spline-viewer>
+      {selected_detail_html}
     </div>
     <div class="gring1"></div>
     <div class="gring2"></div>
@@ -1590,32 +1647,14 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
   <!-- RIGHT -->
   <div class="panel right">
     <div class="ptitle" style="color:#38bdf8;text-shadow:0 0 18px #38bdf888;">AI</div>
-    <div class="psub" style="color:#38bdf8;">\U0001f9e0 Cognitive Intelligence &amp; ML</div>
+    <div class="psub" style="color:#38bdf8;">🧠 Cognitive Intelligence &amp; ML</div>
     <div class="stats">
       <div class="stat"><div class="stat-v" style="color:#38bdf8;">{ai_total}</div><div class="stat-l">TOTAL</div></div>
       <div class="stat"><div class="stat-v" style="color:#4ade80;">{ai_done}</div><div class="stat-l">DONE</div></div>
       <div class="stat"><div class="stat-v" style="color:#c084fc;">{ai_wip}</div><div class="stat-l">WIP</div></div>
       <div class="stat"><div class="stat-v" style="color:#facc15;">{ai_roi}</div><div class="stat-l">ROI</div></div>
     </div>
-    <!-- Brain hologram SVG on blue pedestal -->
-    <svg width="130" height="170" viewBox="0 0 130 170" fill="none">
-      <ellipse cx="65" cy="158" rx="50" ry="11" fill="none" stroke="#0ea5e9" stroke-width="2" opacity=".5"/>
-      <ellipse cx="65" cy="158" rx="58" ry="13" fill="none" stroke="#38bdf8" stroke-width="1" opacity=".25"/>
-      <ellipse cx="65" cy="158" rx="42" ry="9"  fill="rgba(56,189,248,0.15)"/>
-      <rect x="52" y="136" width="26" height="26" rx="5" fill="#0c2a40"/>
-      <rect x="48" y="127" width="34" height="13" rx="4" fill="#0e3352"/>
-      <path d="M65 110 C44 110,30 96,30 79 C30 68,36 59,45 55 C43 50,42 45,44 40 C46 33,53 29,59 30 C61 25,65 21,70 21 C75 21,79 25,81 30 C87 29,94 33,96 40 C98 45,97 50,95 55 C104 59,110 68,110 79 C110 96,96 110,75 110 Z" fill="none" stroke="#38bdf8" stroke-width="1.8" opacity=".85"/>
-      <path d="M65 21 C64 57,64 87,65 110" stroke="#38bdf8" stroke-width="1" opacity=".35" stroke-dasharray="3 3"/>
-      <path d="M44 62 Q52 67,48 75 Q44 81,51 85" stroke="#38bdf8" stroke-width="1.3" fill="none" opacity=".65"/>
-      <path d="M50 51 Q59 60,55 68 Q51 76,57 80" stroke="#38bdf8" stroke-width="1.3" fill="none" opacity=".65"/>
-      <path d="M86 62 Q78 67,82 75 Q86 81,79 85" stroke="#38bdf8" stroke-width="1.3" fill="none" opacity=".65"/>
-      <path d="M80 51 Q71 60,75 68 Q79 76,73 80" stroke="#38bdf8" stroke-width="1.3" fill="none" opacity=".65"/>
-      <ellipse cx="65" cy="66" rx="22" ry="20" fill="rgba(56,189,248,0.10)"/>
-      <ellipse cx="65" cy="66" rx="10" ry="9"  fill="rgba(56,189,248,0.22)"/>
-      <ellipse cx="65" cy="160" rx="38" ry="7" fill="rgba(56,189,248,0.3)"/>
-      <rect x="48" y="148" width="34" height="17" rx="4" fill="rgba(14,165,233,0.45)"/>
-      <text x="65" y="161" text-anchor="middle" fill="#38bdf8" font-size="9" font-weight="800" letter-spacing="3">AI</text>
-    </svg>
+    <div class="category-grid">{right_category_html}</div>
   </div>
 
 </div>
@@ -1642,6 +1681,15 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
       }}));
     }});
   }});
+  window.selectCategory = function(cat) {{
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('selected_category') === cat) {{
+      params.delete('selected_category');
+    }} else {{
+      params.set('selected_category', cat);
+    }}
+    window.location.search = params.toString();
+  }};
 }})();
 </script>
 </body></html>"""
