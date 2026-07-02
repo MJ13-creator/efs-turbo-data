@@ -1439,16 +1439,16 @@ def page_dashboard():
     <div class="km-board">
       <div class="km-track">
         <div class="km-copy">
-          <div class="km-card"><div class="km-label">Automation Ideas</div><div class="km-value">{auto_total_ideas}</div><div class="km-sub">Total automation ideas</div></div>
-          <div class="km-card"><div class="km-label">AI Ideas</div><div class="km-value">{ai_total_ideas}</div><div class="km-sub">Total AI ideas</div></div>
-          <div class="km-card"><div class="km-label">Automation ROI</div><div class="km-value">{auto_roi}</div><div class="km-sub">Total automation ROI</div></div>
-          <div class="km-card"><div class="km-label">AI ROI</div><div class="km-value">{ai_roi}</div><div class="km-sub">Total AI ROI</div></div>
+          <div class="km-card"><div class="km-label">Total Ideas</div><div class="km-value">{total}</div><div class="km-sub">All ideas in the current view</div></div>
+          <div class="km-card"><div class="km-label">Completed</div><div class="km-value">{completed}</div><div class="km-sub">Ideas marked completed</div></div>
+          <div class="km-card"><div class="km-label">Total Hrs Saved / yr</div><div class="km-value">{cust_hrs+int_hrs:,.0f}</div><div class="km-sub">Customer + Internal hours</div></div>
+          <div class="km-card"><div class="km-label">Total ROI</div><div class="km-value">{cust_roi+int_roi}</div><div class="km-sub">Customer + Internal ROI</div></div>
         </div>
         <div class="km-copy">
-          <div class="km-card"><div class="km-label">Automation Ideas</div><div class="km-value">{auto_total_ideas}</div><div class="km-sub">Total automation ideas</div></div>
-          <div class="km-card"><div class="km-label">AI Ideas</div><div class="km-value">{ai_total_ideas}</div><div class="km-sub">Total AI ideas</div></div>
-          <div class="km-card"><div class="km-label">Automation ROI</div><div class="km-value">{auto_roi}</div><div class="km-sub">Total automation ROI</div></div>
-          <div class="km-card"><div class="km-label">AI ROI</div><div class="km-value">{ai_roi}</div><div class="km-sub">Total AI ROI</div></div>
+          <div class="km-card"><div class="km-label">Total Ideas</div><div class="km-value">{total}</div><div class="km-sub">All ideas in the current view</div></div>
+          <div class="km-card"><div class="km-label">Completed</div><div class="km-value">{completed}</div><div class="km-sub">Ideas marked completed</div></div>
+          <div class="km-card"><div class="km-label">Total Hrs Saved / yr</div><div class="km-value">{cust_hrs+int_hrs:,.0f}</div><div class="km-sub">Customer + Internal hours</div></div>
+          <div class="km-card"><div class="km-label">Total ROI</div><div class="km-value">{cust_roi+int_roi}</div><div class="km-sub">Customer + Internal ROI</div></div>
         </div>
       </div>
     </div>
