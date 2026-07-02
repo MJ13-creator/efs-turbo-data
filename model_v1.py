@@ -1422,6 +1422,37 @@ def page_dashboard():
     auto_total_ideas = len([i for i in ideas if i.get("automation_category") in AUTOMATION_CATS])
     ai_total_ideas   = len([i for i in ideas if i.get("automation_category") in AI_CATS])
     proj_count       = len({i.get("project","") for i in ideas if i.get("project")})
+    auto_roi = round(sum(float(i.get("roi",0) or 0) for i in ideas if i.get("automation_category","") in AUTOMATION_CATS),1)
+    ai_roi = round(sum(float(i.get("roi",0) or 0) for i in ideas if i.get("automation_category","") in AI_CATS),1)
+
+    st.markdown(f"""
+    <style>
+      .km-board{{position:relative;overflow:hidden;margin-bottom:22px;border-radius:24px;border:1px solid rgba(255,255,255,.12);background:rgba(15,23,42,.85);box-shadow:0 18px 50px rgba(15,23,42,.25);}}
+      .km-track{{display:flex;gap:12px;width:max-content;animation:km-scroll-left 20s linear infinite;}}
+      .km-copy{{display:flex;gap:12px;}}
+      .km-card{{flex:0 0 250px;min-width:250px;padding:18px 20px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);}}
+      .km-label{{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.72);margin-bottom:8px;}}
+      .km-value{{font-size:20px;font-weight:800;color:#fff;line-height:1.1;}}
+      .km-sub{{font-size:11px;color:rgba(255,255,255,.68);margin-top:6px;}}
+      @keyframes km-scroll-left{{0%{{transform:translateX(0);}}100%{{transform:translateX(-50%);}}}}
+    </style>
+    <div class="km-board">
+      <div class="km-track">
+        <div class="km-copy">
+          <div class="km-card"><div class="km-label">Automation Ideas</div><div class="km-value">{auto_total_ideas}</div><div class="km-sub">Total automation ideas</div></div>
+          <div class="km-card"><div class="km-label">AI Ideas</div><div class="km-value">{ai_total_ideas}</div><div class="km-sub">Total AI ideas</div></div>
+          <div class="km-card"><div class="km-label">Automation ROI</div><div class="km-value">{auto_roi}</div><div class="km-sub">Total automation ROI</div></div>
+          <div class="km-card"><div class="km-label">AI ROI</div><div class="km-value">{ai_roi}</div><div class="km-sub">Total AI ROI</div></div>
+        </div>
+        <div class="km-copy">
+          <div class="km-card"><div class="km-label">Automation Ideas</div><div class="km-value">{auto_total_ideas}</div><div class="km-sub">Total automation ideas</div></div>
+          <div class="km-card"><div class="km-label">AI Ideas</div><div class="km-value">{ai_total_ideas}</div><div class="km-sub">Total AI ideas</div></div>
+          <div class="km-card"><div class="km-label">Automation ROI</div><div class="km-value">{auto_roi}</div><div class="km-sub">Total automation ROI</div></div>
+          <div class="km-card"><div class="km-label">AI ROI</div><div class="km-value">{ai_roi}</div><div class="km-sub">Total AI ROI</div></div>
+        </div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     c1,c2,c3,c4 = st.columns(4)
     with c1:
@@ -1588,54 +1619,6 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
 <body>
 <div id="scene">
 
-  <div id="running-board">
-    <div class="board-track">
-      <div class="board-copy">
-        <div class="board-chip">
-          <div class="board-label">Automation Ideas</div>
-          <div class="board-value">{auto_total}</div>
-          <div class="board-sub">Overall automation ideas</div>
-        </div>
-        <div class="board-chip">
-          <div class="board-label">AI Ideas</div>
-          <div class="board-value">{ai_total}</div>
-          <div class="board-sub">Overall AI ideas</div>
-        </div>
-        <div class="board-chip">
-          <div class="board-label">Automation ROI</div>
-          <div class="board-value">{auto_roi}</div>
-          <div class="board-sub">Total automation ROI</div>
-        </div>
-        <div class="board-chip">
-          <div class="board-label">AI ROI</div>
-          <div class="board-value">{ai_roi}</div>
-          <div class="board-sub">Total AI ROI</div>
-        </div>
-      </div>
-      <div class="board-copy">
-        <div class="board-chip">
-          <div class="board-label">Automation Ideas</div>
-          <div class="board-value">{auto_total}</div>
-          <div class="board-sub">Overall automation ideas</div>
-        </div>
-        <div class="board-chip">
-          <div class="board-label">AI Ideas</div>
-          <div class="board-value">{ai_total}</div>
-          <div class="board-sub">Overall AI ideas</div>
-        </div>
-        <div class="board-chip">
-          <div class="board-label">Automation ROI</div>
-          <div class="board-value">{auto_roi}</div>
-          <div class="board-sub">Total automation ROI</div>
-        </div>
-        <div class="board-chip">
-          <div class="board-label">AI ROI</div>
-          <div class="board-value">{ai_roi}</div>
-          <div class="board-sub">Total AI ROI</div>
-        </div>
-      </div>
-    </div>
-  </div>
   <div class="panel">
     <div class="ptitle" style="color:#c084fc;text-shadow:0 0 18px #c084fc88;">AUTOMATION</div>
     <div class="psub" style="color:#c084fc;">⚙️ Robotic Process &amp; Workflow</div>
