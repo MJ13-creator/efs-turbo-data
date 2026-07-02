@@ -1525,8 +1525,7 @@ def page_dashboard():
         selected_detail_html = '''
           <div class="detail-overlay">
             <div class="detail-card">
-              <div class="detail-title">Select a category</div>
-              <div class="detail-sub">Click any Automation or AI category to show details here.</div>
+              <div class="detail-title">"https://community.spline.design/file/401875e7-6d8e-4027-9632-7a243433f3a1"</div>
             </div>
           </div>'''
 
