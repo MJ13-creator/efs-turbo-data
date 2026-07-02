@@ -1439,191 +1439,9 @@ def page_dashboard():
 
     # second KPI row removed
 
-    # ── ROW 2: Cinematic Spline Canvas — Automation | Robot Arm | AI ────────
-    st.markdown("##### 🤖 Automation &amp; AI Category Breakdown")
+    # -- ROW 2: Cinematic Automation | AI Canvas (exact reference image match) --
+    st.markdown("##### \U0001f916 Automation &amp; AI Category Breakdown")
 
-    # Spline viewer script + canvas CSS
-    st.markdown("""
-    <script type="module"
-        src="https://unpkg.com/@splinetool/viewer@1.0.77/build/spline-viewer.js">
-    </script>
-    <style>
-    /* ── canvas outer frame ── */
-    .syn-canvas {
-        position: relative;
-        width: 100%;
-        min-height: 340px;
-        background: radial-gradient(ellipse at 30% 60%, #1a0533 0%, #060b1a 55%, #030812 100%);
-        border-radius: 20px;
-        overflow: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 28px 32px;
-        gap: 0;
-        box-shadow: 0 8px 40px rgba(0,0,0,.55);
-        /* animated grid floor */
-        background-image:
-            radial-gradient(ellipse at 30% 60%, #1a0533 0%, #060b1a 55%, #030812 100%),
-            linear-gradient(rgba(139,92,246,.07) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(139,92,246,.07) 1px, transparent 1px);
-        background-size: 100% 100%, 32px 32px, 32px 32px;
-        background-position: 0 0, 0 60%, 0 60%;
-    }
-    /* glowing floor grid on the bottom half only */
-    .syn-canvas::before {
-        content: "";
-        position: absolute;
-        left: 0; right: 0; bottom: 0;
-        height: 55%;
-        background:
-            linear-gradient(rgba(139,92,246,.06) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(56,189,248,.06) 1px, transparent 1px);
-        background-size: 36px 36px;
-        pointer-events: none;
-        z-index: 0;
-    }
-    /* ── left automation panel ── */
-    .syn-left {
-        flex: 0 0 30%;
-        position: relative;
-        z-index: 5;
-    }
-    .syn-left-title {
-        font-size: 11px;
-        font-weight: 800;
-        letter-spacing: 3px;
-        text-transform: uppercase;
-        color: #c084fc;
-        margin-bottom: 10px;
-        text-shadow: 0 0 16px #c084fc88;
-    }
-    .syn-left-sub {
-        font-size: 10px;
-        color: rgba(192,132,252,.7);
-        margin-bottom: 16px;
-        font-style: italic;
-    }
-    /* ── right AI panel ── */
-    .syn-right {
-        flex: 0 0 30%;
-        position: relative;
-        z-index: 5;
-        text-align: right;
-    }
-    .syn-right-title {
-        font-size: 11px;
-        font-weight: 800;
-        letter-spacing: 3px;
-        text-transform: uppercase;
-        color: #38bdf8;
-        margin-bottom: 10px;
-        text-shadow: 0 0 16px #38bdf888;
-    }
-    .syn-right-sub {
-        font-size: 10px;
-        color: rgba(56,189,248,.7);
-        margin-bottom: 16px;
-        font-style: italic;
-    }
-    /* ── centre robot ── */
-    .syn-centre {
-        flex: 0 0 34%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
-        position: relative;
-        z-index: 10;
-    }
-    .syn-centre-tagline {
-        font-size: 11px;
-        color: rgba(255,255,255,.65);
-        text-align: center;
-        margin-bottom: 6px;
-        line-height: 1.5;
-        letter-spacing: .3px;
-    }
-    .syn-centre-tagline b { color: rgba(255,255,255,.9); }
-    #spline-nexbot-wrap {
-        width: 260px;
-        height: 300px;
-        background: transparent;
-        cursor: crosshair;
-        overflow: hidden;
-        border-radius: 12px;
-        box-shadow: 0 0 60px #7c3aed44, 0 0 20px #38bdf822;
-    }
-    /* glowing platform rings beneath robot */
-    .syn-ring {
-        width: 200px;
-        height: 18px;
-        border-radius: 50%;
-        margin-top: -8px;
-        position: relative;
-        z-index: 3;
-    }
-    .syn-ring-purple {
-        background: radial-gradient(ellipse, #7c3aed88 0%, transparent 70%);
-        box-shadow: 0 0 30px #7c3aed66;
-    }
-    .syn-ring-blue {
-        background: radial-gradient(ellipse, #38bdf844 0%, transparent 70%);
-        box-shadow: 0 0 20px #38bdf833;
-        width: 160px;
-        height: 10px;
-        margin-top: 4px;
-    }
-    /* wave particle connector lines (pure CSS gradient) */
-    .syn-wave-left {
-        position: absolute;
-        left: 31%; top: 50%;
-        width: 18%; height: 60px;
-        background: linear-gradient(90deg,
-            transparent 0%, #c084fc44 30%, #c084fc88 50%, #7c3aed44 80%, transparent 100%);
-        border-radius: 50%;
-        transform: translateY(-50%) skewY(-8deg);
-        filter: blur(3px);
-        z-index: 4;
-        pointer-events: none;
-        animation: wavepulse 2.2s ease-in-out infinite;
-    }
-    .syn-wave-right {
-        position: absolute;
-        right: 31%; top: 50%;
-        width: 18%; height: 60px;
-        background: linear-gradient(270deg,
-            transparent 0%, #38bdf844 30%, #38bdf888 50%, #0ea5e944 80%, transparent 100%);
-        border-radius: 50%;
-        transform: translateY(-50%) skewY(8deg);
-        filter: blur(3px);
-        z-index: 4;
-        pointer-events: none;
-        animation: wavepulse 2.2s ease-in-out infinite reverse;
-    }
-    @keyframes wavepulse {
-        0%,100% { opacity:.5; transform:translateY(-50%) skewY(-8deg) scaleX(.9); }
-        50%      { opacity:1;  transform:translateY(-55%) skewY(-8deg) scaleX(1.08); }
-    }
-    /* stat pill inside panels */
-    .syn-stat {
-        display: inline-flex;
-        flex-direction: column;
-        align-items: center;
-        background: rgba(255,255,255,.05);
-        border: 1px solid rgba(255,255,255,.1);
-        border-radius: 8px;
-        padding: 6px 10px;
-        margin: 3px;
-        min-width: 60px;
-    }
-    .syn-stat-v { font-size: 16px; font-weight: 800; color: #fff; }
-    .syn-stat-l { font-size: 8px; color: rgba(255,255,255,.5); letter-spacing: .5px; margin-top: 1px; }
-    .syn-stat-wrap { display: flex; flex-wrap: wrap; gap: 2px; justify-content: flex-start; margin-top: 6px; }
-    .syn-stat-wrap-r { display: flex; flex-wrap: wrap; gap: 2px; justify-content: flex-end; margin-top: 6px; }
-    </style>""", unsafe_allow_html=True)
-
-    # ── Compute stats for both panels ──────────────────────────────────────
     auto_total = len([i for i in ideas if i.get("automation_category","") in AUTOMATION_CATS])
     ai_total   = len([i for i in ideas if i.get("automation_category","") in AI_CATS])
     auto_done  = len([i for i in ideas if i.get("automation_category","") in AUTOMATION_CATS and i.get("status")=="Completed"])
@@ -1633,116 +1451,201 @@ def page_dashboard():
     auto_roi   = round(sum(float(i.get("roi",0) or 0) for i in ideas if i.get("automation_category","") in AUTOMATION_CATS),1)
     ai_roi     = round(sum(float(i.get("roi",0) or 0) for i in ideas if i.get("automation_category","") in AI_CATS),1)
 
-    # ── Build per-category stat rows ───────────────────────────────────────
-    def cat_pills_html(cats, ideas, justify="flex-start"):
-        html = f'<div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:{justify};margin-top:8px;">'
-        for cat in cats:
-            n   = len([i for i in ideas if i.get("automation_category")==cat])
-            lbl = cat.split("-",1)[-1][:18]
-            col = AUTO_CAT_COLORS.get(cat,"#7c3aed")
-            html += (f'<span style="font-size:9px;font-weight:700;color:{col};'
-                     f'background:rgba(255,255,255,.06);border:1px solid {col}44;'
-                     f'border-radius:20px;padding:2px 8px;">'
-                     f'{lbl} <b style="color:#fff;">({n})</b></span>')
-        html += '</div>'
-        return html
+    _canvas_html = f"""<!DOCTYPE html>
+<html><head><meta charset="utf-8"/>
+<script type="module" src="https://unpkg.com/@splinetool/viewer@1.0.77/build/spline-viewer.js"></script>
+<style>
+*{{margin:0;padding:0;box-sizing:border-box;}}
+html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Inter',sans-serif;}}
+#scene{{
+  position:relative;width:100%;height:420px;
+  background:radial-gradient(ellipse at 20% 70%,#1a0240 0%,#06091a 45%,#030710 100%);
+  overflow:hidden;display:flex;align-items:center;justify-content:space-between;padding:0 36px;
+}}
+#scene::after{{
+  content:"";position:absolute;left:0;right:0;bottom:0;height:48%;
+  background:linear-gradient(rgba(139,92,246,.10) 1px,transparent 1px),
+             linear-gradient(90deg,rgba(56,189,248,.08) 1px,transparent 1px);
+  background-size:44px 44px;
+  transform:perspective(600px) rotateX(52deg);transform-origin:bottom center;
+  pointer-events:none;z-index:0;
+}}
+.panel{{flex:0 0 27%;position:relative;z-index:5;display:flex;flex-direction:column;align-items:flex-start;gap:0;}}
+.panel.right{{align-items:flex-end;text-align:right;}}
+.ptitle{{font-size:13px;font-weight:900;letter-spacing:4px;text-transform:uppercase;margin-bottom:5px;}}
+.psub{{font-size:10px;margin-bottom:10px;opacity:.7;font-style:italic;}}
+.stats{{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;}}
+.panel.right .stats{{justify-content:flex-end;}}
+.stat{{display:flex;flex-direction:column;align-items:center;
+       background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+       border-radius:8px;padding:5px 9px;min-width:50px;}}
+.stat-v{{font-size:16px;font-weight:800;color:#fff;line-height:1.1;}}
+.stat-l{{font-size:7px;letter-spacing:.8px;color:rgba(255,255,255,.45);margin-top:2px;}}
+.centre{{flex:0 0 40%;display:flex;flex-direction:column;align-items:center;
+         justify-content:flex-start;padding-top:24px;position:relative;z-index:10;}}
+.tagline{{font-size:12px;color:rgba(255,255,255,.7);text-align:center;
+          margin-bottom:12px;line-height:1.6;letter-spacing:.2px;}}
+.tagline b{{color:rgba(255,255,255,.95);}}
+#nexbot-wrap{{
+  width:260px;height:260px;cursor:crosshair;overflow:hidden;
+  border-radius:50%;
+  box-shadow:0 0 70px #7c3aed55,0 0 130px #7c3aed22,0 0 35px #38bdf833;
+  position:relative;z-index:5;
+  background:radial-gradient(circle,#0d0525 30%,#030712 100%);
+}}
+.gring1{{width:200px;height:12px;border-radius:50%;margin-top:-4px;
+  background:radial-gradient(ellipse,rgba(124,58,237,.55) 0%,transparent 70%);
+  box-shadow:0 0 28px rgba(124,58,237,.4);}}
+.gring2{{width:140px;height:8px;border-radius:50%;margin-top:3px;
+  background:radial-gradient(ellipse,rgba(56,189,248,.35) 0%,transparent 70%);
+  box-shadow:0 0 16px rgba(56,189,248,.3);}}
+.wave-wrap{{position:absolute;top:50%;z-index:3;pointer-events:none;}}
+.wave-left{{left:28%;transform:translateY(-55%);}}
+.wave-right{{right:28%;transform:translateY(-55%);}}
+.wave-svg{{width:150px;height:80px;overflow:visible;}}
+</style></head>
+<body>
+<div id="scene">
 
-    auto_pills = cat_pills_html(AUTOMATION_CATS, ideas, "flex-start")
-    ai_pills   = cat_pills_html(AI_CATS, ideas, "flex-end")
-
-    canvas_html = f"""
-    <div class="syn-canvas">
-      <!-- left automation -->
-      <div class="syn-left">
-        <div class="syn-left-title">AUTOMATION</div>
-        <div class="syn-left-sub">⚙️ Robotic Process &amp; Workflow</div>
-        <div class="syn-stat-wrap">
-          <div class="syn-stat"><div class="syn-stat-v" style="color:#c084fc;">{auto_total}</div><div class="syn-stat-l">TOTAL</div></div>
-          <div class="syn-stat"><div class="syn-stat-v" style="color:#4ade80;">{auto_done}</div><div class="syn-stat-l">DONE</div></div>
-          <div class="syn-stat"><div class="syn-stat-v" style="color:#38bdf8;">{auto_wip}</div><div class="syn-stat-l">WIP</div></div>
-          <div class="syn-stat"><div class="syn-stat-v" style="color:#facc15;">{auto_roi}</div><div class="syn-stat-l">ROI</div></div>
-        </div>
-        {auto_pills}
-      </div>
-
-      <!-- wave left -->
-      <div class="syn-wave-left"></div>
-
-      <!-- centre robot -->
-      <div class="syn-centre">
-        <div class="syn-centre-tagline">
-          <b>Move your cursor across</b><br>
-          ← &nbsp;to explore the synergy&nbsp; →
-        </div>
-        <div id="spline-nexbot-wrap">
-          <spline-viewer
-            id="spline-nexbot"
-            url="https://prod.spline.design/kZDDjO5HmRHKWMYo/scene.splinecode"
-            style="width:260px;height:300px;display:block;"
-            loading-anim="true">
-          </spline-viewer>
-        </div>
-        <div class="syn-ring syn-ring-purple"></div>
-        <div class="syn-ring syn-ring-blue"></div>
-      </div>
-
-      <!-- wave right -->
-      <div class="syn-wave-right"></div>
-
-      <!-- right AI -->
-      <div class="syn-right">
-        <div class="syn-right-title">AI</div>
-        <div class="syn-right-sub">🧠 Cognitive Intelligence &amp; ML</div>
-        <div class="syn-stat-wrap-r">
-          <div class="syn-stat"><div class="syn-stat-v" style="color:#38bdf8;">{ai_total}</div><div class="syn-stat-l">TOTAL</div></div>
-          <div class="syn-stat"><div class="syn-stat-v" style="color:#4ade80;">{ai_done}</div><div class="syn-stat-l">DONE</div></div>
-          <div class="syn-stat"><div class="syn-stat-v" style="color:#c084fc;">{ai_wip}</div><div class="syn-stat-l">WIP</div></div>
-          <div class="syn-stat"><div class="syn-stat-v" style="color:#facc15;">{ai_roi}</div><div class="syn-stat-l">ROI</div></div>
-        </div>
-        {ai_pills}
-      </div>
+  <!-- LEFT -->
+  <div class="panel">
+    <div class="ptitle" style="color:#c084fc;text-shadow:0 0 18px #c084fc88;">AUTOMATION</div>
+    <div class="psub" style="color:#c084fc;">\u2699\ufe0f Robotic Process &amp; Workflow</div>
+    <div class="stats">
+      <div class="stat"><div class="stat-v" style="color:#c084fc;">{auto_total}</div><div class="stat-l">TOTAL</div></div>
+      <div class="stat"><div class="stat-v" style="color:#4ade80;">{auto_done}</div><div class="stat-l">DONE</div></div>
+      <div class="stat"><div class="stat-v" style="color:#38bdf8;">{auto_wip}</div><div class="stat-l">WIP</div></div>
+      <div class="stat"><div class="stat-v" style="color:#facc15;">{auto_roi}</div><div class="stat-l">ROI</div></div>
     </div>
+    <!-- Robotic arm SVG on purple pedestal -->
+    <svg width="130" height="170" viewBox="0 0 130 170" fill="none">
+      <ellipse cx="65" cy="158" rx="50" ry="11" fill="none" stroke="#7c3aed" stroke-width="2" opacity=".5"/>
+      <ellipse cx="65" cy="158" rx="58" ry="13" fill="none" stroke="#c084fc" stroke-width="1" opacity=".25"/>
+      <ellipse cx="65" cy="158" rx="42" ry="9"  fill="rgba(192,132,252,0.15)"/>
+      <rect x="52" y="136" width="26" height="26" rx="5" fill="#2d1154"/>
+      <rect x="48" y="127" width="34" height="13" rx="4" fill="#3b155e"/>
+      <rect x="60" y="78" width="13" height="53" rx="5" fill="#4a1a75" transform="rotate(-10 65 105)"/>
+      <circle cx="68" cy="78" r="9" fill="#5b1f8c"/>
+      <rect x="57" y="34" width="13" height="48" rx="5" fill="#5b1f8c" transform="rotate(15 65 58)"/>
+      <circle cx="62" cy="34" r="10" fill="#7c3aed"/>
+      <line x1="70" y1="20" x2="57" y2="8"  stroke="#c084fc" stroke-width="4" stroke-linecap="round"/>
+      <line x1="70" y1="20" x2="83" y2="7"  stroke="#c084fc" stroke-width="4" stroke-linecap="round"/>
+      <line x1="70" y1="20" x2="70" y2="4"  stroke="#c084fc" stroke-width="4" stroke-linecap="round"/>
+      <ellipse cx="65" cy="160" rx="38" ry="7" fill="rgba(124,58,237,0.3)"/>
+      <rect x="24" y="148" width="82" height="17" rx="4" fill="rgba(124,58,237,0.45)"/>
+      <text x="65" y="161" text-anchor="middle" fill="#c084fc" font-size="9" font-weight="800" letter-spacing="2">AUTOMATION</text>
+    </svg>
+  </div>
 
-    <!-- cursor tracking JS: forward page mousemove into Spline shadow canvas -->
-    <script>
-    (function () {{
-        var _last = 0;
-        document.addEventListener("mousemove", function (e) {{
-            var now = Date.now();
-            if (now - _last < 16) return;
-            _last = now;
-            var viewer = document.getElementById("spline-nexbot");
-            if (!viewer) return;
-            var root   = viewer.shadowRoot || viewer;
-            var canvas = root.querySelector("canvas");
-            if (!canvas) return;
-            var cr  = canvas.getBoundingClientRect();
-            var wr  = document.getElementById("spline-nexbot-wrap");
-            if (!wr) return;
-            var wRect = wr.getBoundingClientRect();
-            var nx = (e.clientX - wRect.left)  / Math.max(wRect.width, 1);
-            var ny = (e.clientY - wRect.top)    / Math.max(wRect.height, 1);
-            ["pointermove", "mousemove"].forEach(function (t) {{
-                canvas.dispatchEvent(new MouseEvent(t, {{
-                    clientX: cr.left + nx * cr.width,
-                    clientY: cr.top  + ny * cr.height,
-                    bubbles: true, cancelable: true, view: window
-                }}));
-            }});
-        }});
-    }})();
-    </script>
-    """
-    st.markdown(canvas_html, unsafe_allow_html=True)
+  <!-- WAVE LEFT -->
+  <div class="wave-wrap wave-left">
+    <svg class="wave-svg" viewBox="0 0 150 80">
+      <defs><filter id="gp"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+      <path d="M0 40 Q37 10,75 40 Q113 70,150 40" stroke="#c084fc" stroke-width="2.5" fill="none" filter="url(#gp)" opacity=".9">
+        <animate attributeName="d" values="M0 40 Q37 10,75 40 Q113 70,150 40;M0 40 Q37 70,75 40 Q113 10,150 40;M0 40 Q37 10,75 40 Q113 70,150 40" dur="2.4s" repeatCount="indefinite"/>
+      </path>
+      <path d="M0 40 Q37 25,75 40 Q113 55,150 40" stroke="#7c3aed" stroke-width="1.5" fill="none" filter="url(#gp)" opacity=".6">
+        <animate attributeName="d" values="M0 40 Q37 25,75 40 Q113 55,150 40;M0 40 Q37 55,75 40 Q113 25,150 40;M0 40 Q37 25,75 40 Q113 55,150 40" dur="1.8s" repeatCount="indefinite"/>
+      </path>
+      <circle r="3.5" fill="#c084fc" opacity=".95"><animateMotion dur="2.4s" repeatCount="indefinite" path="M0 40 Q37 10,75 40 Q113 70,150 40"/></circle>
+      <circle r="2.5" fill="#e879f9" opacity=".8"><animateMotion dur="1.6s" repeatCount="indefinite" begin="0.8s" path="M0 40 Q37 25,75 40 Q113 55,150 40"/></circle>
+      <circle r="2" fill="#a855f7" opacity=".6"><animateMotion dur="2s" repeatCount="indefinite" begin="0.4s" path="M0 40 Q37 10,75 40 Q113 70,150 40"/></circle>
+    </svg>
+  </div>
 
-    # ── Category detail panels (interactive Streamlit widgets) ─────────────
-    pa, pb = st.columns(2)
-    with pa:
-        render_category_panel("Automation", "⚙️", AUTOMATION_CATS, ideas,
-                              "_sel_automation_cat", "#7c3aed")
-    with pb:
-        render_category_panel("AI", "🧠", AI_CATS, ideas,
-                              "_sel_ai_cat", "#38bdf8")
+  <!-- CENTRE -->
+  <div class="centre">
+    <div class="tagline">
+      <b>Move your cursor across</b><br>
+      <span style="color:#c084fc;">&#8592;</span>
+      <span style="color:rgba(255,255,255,.6);"> to explore the synergy </span>
+      <span style="color:#38bdf8;">&#8594;</span>
+    </div>
+    <div id="nexbot-wrap">
+      <spline-viewer id="spline-nexbot"
+        url="https://prod.spline.design/kZDDjO5HmRHKWMYo/scene.splinecode"
+        style="width:260px;height:260px;display:block;" loading-anim="true">
+      </spline-viewer>
+    </div>
+    <div class="gring1"></div>
+    <div class="gring2"></div>
+  </div>
+
+  <!-- WAVE RIGHT -->
+  <div class="wave-wrap wave-right">
+    <svg class="wave-svg" viewBox="0 0 150 80">
+      <defs><filter id="gc"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+      <path d="M0 40 Q37 70,75 40 Q113 10,150 40" stroke="#38bdf8" stroke-width="2.5" fill="none" filter="url(#gc)" opacity=".9">
+        <animate attributeName="d" values="M0 40 Q37 70,75 40 Q113 10,150 40;M0 40 Q37 10,75 40 Q113 70,150 40;M0 40 Q37 70,75 40 Q113 10,150 40" dur="2.4s" repeatCount="indefinite"/>
+      </path>
+      <path d="M0 40 Q37 55,75 40 Q113 25,150 40" stroke="#0ea5e9" stroke-width="1.5" fill="none" filter="url(#gc)" opacity=".6">
+        <animate attributeName="d" values="M0 40 Q37 55,75 40 Q113 25,150 40;M0 40 Q37 25,75 40 Q113 55,150 40;M0 40 Q37 55,75 40 Q113 25,150 40" dur="1.8s" repeatCount="indefinite"/>
+      </path>
+      <circle r="3.5" fill="#38bdf8" opacity=".95"><animateMotion dur="2.4s" repeatCount="indefinite" path="M150 40 Q113 10,75 40 Q37 70,0 40"/></circle>
+      <circle r="2.5" fill="#7dd3fc" opacity=".8"><animateMotion dur="1.6s" repeatCount="indefinite" begin="0.8s" path="M150 40 Q113 25,75 40 Q37 55,0 40"/></circle>
+      <circle r="2" fill="#0ea5e9" opacity=".6"><animateMotion dur="2s" repeatCount="indefinite" begin="0.4s" path="M150 40 Q113 10,75 40 Q37 70,0 40"/></circle>
+    </svg>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="panel right">
+    <div class="ptitle" style="color:#38bdf8;text-shadow:0 0 18px #38bdf888;">AI</div>
+    <div class="psub" style="color:#38bdf8;">\U0001f9e0 Cognitive Intelligence &amp; ML</div>
+    <div class="stats">
+      <div class="stat"><div class="stat-v" style="color:#38bdf8;">{ai_total}</div><div class="stat-l">TOTAL</div></div>
+      <div class="stat"><div class="stat-v" style="color:#4ade80;">{ai_done}</div><div class="stat-l">DONE</div></div>
+      <div class="stat"><div class="stat-v" style="color:#c084fc;">{ai_wip}</div><div class="stat-l">WIP</div></div>
+      <div class="stat"><div class="stat-v" style="color:#facc15;">{ai_roi}</div><div class="stat-l">ROI</div></div>
+    </div>
+    <!-- Brain hologram SVG on blue pedestal -->
+    <svg width="130" height="170" viewBox="0 0 130 170" fill="none">
+      <ellipse cx="65" cy="158" rx="50" ry="11" fill="none" stroke="#0ea5e9" stroke-width="2" opacity=".5"/>
+      <ellipse cx="65" cy="158" rx="58" ry="13" fill="none" stroke="#38bdf8" stroke-width="1" opacity=".25"/>
+      <ellipse cx="65" cy="158" rx="42" ry="9"  fill="rgba(56,189,248,0.15)"/>
+      <rect x="52" y="136" width="26" height="26" rx="5" fill="#0c2a40"/>
+      <rect x="48" y="127" width="34" height="13" rx="4" fill="#0e3352"/>
+      <path d="M65 110 C44 110,30 96,30 79 C30 68,36 59,45 55 C43 50,42 45,44 40 C46 33,53 29,59 30 C61 25,65 21,70 21 C75 21,79 25,81 30 C87 29,94 33,96 40 C98 45,97 50,95 55 C104 59,110 68,110 79 C110 96,96 110,75 110 Z" fill="none" stroke="#38bdf8" stroke-width="1.8" opacity=".85"/>
+      <path d="M65 21 C64 57,64 87,65 110" stroke="#38bdf8" stroke-width="1" opacity=".35" stroke-dasharray="3 3"/>
+      <path d="M44 62 Q52 67,48 75 Q44 81,51 85" stroke="#38bdf8" stroke-width="1.3" fill="none" opacity=".65"/>
+      <path d="M50 51 Q59 60,55 68 Q51 76,57 80" stroke="#38bdf8" stroke-width="1.3" fill="none" opacity=".65"/>
+      <path d="M86 62 Q78 67,82 75 Q86 81,79 85" stroke="#38bdf8" stroke-width="1.3" fill="none" opacity=".65"/>
+      <path d="M80 51 Q71 60,75 68 Q79 76,73 80" stroke="#38bdf8" stroke-width="1.3" fill="none" opacity=".65"/>
+      <ellipse cx="65" cy="66" rx="22" ry="20" fill="rgba(56,189,248,0.10)"/>
+      <ellipse cx="65" cy="66" rx="10" ry="9"  fill="rgba(56,189,248,0.22)"/>
+      <ellipse cx="65" cy="160" rx="38" ry="7" fill="rgba(56,189,248,0.3)"/>
+      <rect x="48" y="148" width="34" height="17" rx="4" fill="rgba(14,165,233,0.45)"/>
+      <text x="65" y="161" text-anchor="middle" fill="#38bdf8" font-size="9" font-weight="800" letter-spacing="3">AI</text>
+    </svg>
+  </div>
+
+</div>
+<script>
+(function(){{
+  var _last=0;
+  document.addEventListener("mousemove",function(e){{
+    var now=Date.now();if(now-_last<16)return;_last=now;
+    var viewer=document.getElementById("spline-nexbot");
+    if(!viewer)return;
+    var root=viewer.shadowRoot||viewer;
+    var canvas=root.querySelector("canvas");
+    if(!canvas)return;
+    var cr=canvas.getBoundingClientRect();
+    var wr=document.getElementById("nexbot-wrap");
+    if(!wr)return;
+    var wRect=wr.getBoundingClientRect();
+    var nx=(e.clientX-wRect.left)/Math.max(wRect.width,1);
+    var ny=(e.clientY-wRect.top)/Math.max(wRect.height,1);
+    ["pointermove","mousemove"].forEach(function(t){{
+      canvas.dispatchEvent(new MouseEvent(t,{{
+        clientX:cr.left+nx*cr.width,clientY:cr.top+ny*cr.height,
+        bubbles:true,cancelable:true,view:window
+      }}));
+    }});
+  }});
+}})();
+</script>
+</body></html>"""
+    st.components.v1.html(_canvas_html, height=440, scrolling=False)
 
     # ── ROW 3: Charts row (Status BAR chart + Customer pie + clean Hours/Project) ─
     st.markdown("##### 📈 Charts")
