@@ -518,17 +518,6 @@ def apply_theme(theme_name):
     .cat-insight-stat{{text-align:center;}}
     .cat-insight-stat .v{{font-size:clamp(13px,1.3vw,17px);font-weight:800;}}
     .cat-insight-stat .l{{font-size:clamp(7.5px,0.7vw,9px);color:#64748b;font-weight:600;margin-top:1px;}}
-    .category-panel{{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:18px;min-height:360px;}}
-    .category-panel h4{{margin:0 0 8px 0;font-size:14px;font-weight:800;letter-spacing:.05em;}}
-    .category-panel p{{margin:0 0 14px 0;color:#94a3b8;font-size:12px;}}
-    .middle-circle{{width:280px;height:280px;border-radius:50%;margin:0 auto 18px auto;position:relative;background:radial-gradient(circle at 35% 20%,rgba(59,130,246,.2) 0%,rgba(15,23,42,.95) 52%,rgba(15,23,42,.9) 100%);box-shadow:0 18px 70px rgba(0,0,0,.18), inset 0 0 0 1px rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;}}
-    .middle-circle::before{{content:'';position:absolute;inset:18px;border-radius:50%;border:1px dashed rgba(255,255,255,.12);}}
-    .circle-inner{{position:relative;z-index:1;padding:16px;text-align:center;max-width:210px;}}
-    .circle-title{{font-size:18px;font-weight:800;margin-bottom:10px;}}
-    .circle-value{{font-size:32px;font-weight:900;line-height:1;}}
-    .circle-label{{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#94a3b8;margin-bottom:10px;display:block;}}
-    .circle-meta{{font-size:13px;line-height:1.6;color:#e2e8f0;}}
-    .circle-meta span{{display:block;margin-top:8px;font-weight:600;}}
     </style>""", unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1450,7 +1439,7 @@ def page_dashboard():
 
     # second KPI row removed
 
-    # -- ROW 2: Automation | AI Canvas with wavy background --
+    # -- ROW 2: Cinematic Automation | AI Canvas (exact reference image match) --
     st.markdown("##### \U0001f916 Automation &amp; AI Category Breakdown")
 
     auto_total = len([i for i in ideas if i.get("automation_category","") in AUTOMATION_CATS])
@@ -1462,184 +1451,204 @@ def page_dashboard():
     auto_roi   = round(sum(float(i.get("roi",0) or 0) for i in ideas if i.get("automation_category","") in AUTOMATION_CATS),1)
     ai_roi     = round(sum(float(i.get("roi",0) or 0) for i in ideas if i.get("automation_category","") in AI_CATS),1)
 
-    if "selected_category" not in st.session_state:
-        st.session_state["selected_category"] = ""
-    selected_category = st.session_state["selected_category"]
-    if selected_category not in AUTO_CATS:
-        selected_category = ""
-        st.session_state["selected_category"] = ""
-
-    def _cat_stats(cat):
-        subset = [i for i in ideas if i.get("automation_category") == cat]
-        total = len(subset)
-        completed = len([i for i in subset if i.get("status") == "Completed"])
-        wip = len([i for i in subset if i.get("status") == "WIP"])
-        uat = len([i for i in subset if i.get("status") == "UAT"])
-        roi = round(sum(float(i.get("roi",0) or 0) for i in subset),1)
-        hrs = round(sum(idea_hours(i) for i in subset),1)
-        return total, completed, wip, uat, roi, hrs
-
-    left_buttons = []
-    right_buttons = []
-    for cat in AUTOMATION_CATS:
-        count = len([i for i in ideas if i.get("automation_category") == cat])
-        label = cat.split("-",1)[-1]
-        left_buttons.append({"cat":cat,"label":label,"count":count})
-    for cat in AI_CATS:
-        count = len([i for i in ideas if i.get("automation_category") == cat])
-        label = cat.split("-",1)[-1]
-        right_buttons.append({"cat":cat,"label":label,"count":count})
-
-    center_html = ""
-    if selected_category:
-        total, completed, wip, uat, roi, hrs = _cat_stats(selected_category)
-        color = AUTO_CAT_COLORS.get(selected_category, "#7c3aed")
-        label = selected_category.split("-",1)[-1]
-        center_html = f'''
-        <div class="centre">
-          <div class="tagline">
-            <span style="color:rgba(255,255,255,.6);">Selected category details</span>
-          </div>
-          <div class="middle-circle" style="background:radial-gradient(circle at 35% 20%,{color}22 0%,#0f172a 45%,#080b13 100%);">
-            <div class="circle-inner">
-              <div class="circle-title" style="color:{color};">{label}</div>
-              <div class="circle-value">{total}</div>
-              <span class="circle-label">IDEAS SELECTED</span>
-              <div class="circle-meta">ROI <strong>{roi}</strong> · {hrs:,.0f} hrs saved
-                <span>{completed} Done · {wip} WIP · {uat} UAT</span>
-              </div>
-            </div>
-          </div>
-        </div>'''
-    else:
-        center_html = '''
-        <div class="centre">
-          <div class="tagline">
-            <span style="color:rgba(255,255,255,.6);">Click a category to view the details</span>
-          </div>
-          <div class="middle-circle">
-            <div class="circle-inner">
-              <div class="circle-title">Select a category</div>
-              <div class="circle-meta">Automation and AI categories are shown on the left and right panels.</div>
-            </div>
-          </div>
-        </div>'''
-
-    html_buttons_left = "".join([
-        '<div class="cat-card {}">'.format(
-            'selected' if selected_category == item['cat'] else '',
-        ) +
-        '<div class="cat-icon">{}</div>'.format(CATEGORY_ICONS.get(item['cat'], '●')) +
-        '<div class="cat-body"><div class="cat-label">{}</div>'.format(item['label']) +
-        '<div class="cat-count">{} ideas</div></div></div>'.format(item['count'])
-        for item in left_buttons
-    ])
-    html_buttons_right = "".join([
-        '<div class="cat-card {}">'.format(
-            'selected' if selected_category == item['cat'] else '',
-        ) +
-        '<div class="cat-icon">{}</div>'.format(CATEGORY_ICONS.get(item['cat'], '●')) +
-        '<div class="cat-body"><div class="cat-label">{}</div>'.format(item['label']) +
-        '<div class="cat-count">{} ideas</div></div></div>'.format(item['count'])
-        for item in right_buttons
-    ])
-
-    canvas_html = f'''<!DOCTYPE html>
+    _canvas_html = f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8"/>
+<script type="module" src="https://unpkg.com/@splinetool/viewer@1.0.77/build/spline-viewer.js"></script>
 <style>
 *{{margin:0;padding:0;box-sizing:border-box;}}
-html,body{{width:100%;height:100%;overflow:hidden;background:#020617;font-family:'Inter',sans-serif;}}
-#scene{{position:relative;width:100%;height:440px;background:radial-gradient(circle at 20% 20%,rgba(124,58,237,.2),transparent 32%),linear-gradient(180deg,#030712 0%,#070b18 58%,#04070e 100%);overflow:hidden;display:flex;align-items:center;justify-content:space-between;padding:20px 36px;}}
-#scene::after{{content:'';position:absolute;left:0;right:0;bottom:0;height:52%;background:linear-gradient(180deg,rgba(255,255,255,0.05),transparent 80%),linear-gradient(90deg,rgba(56,189,248,.06) 1px,transparent 1px);background-size:30px 30px;pointer-events:none;z-index:0;}}
-.panel{{flex:0 0 28%;position:relative;z-index:2;display:flex;flex-direction:column;gap:14px;}}
-.panel.left{{align-items:flex-start;}}
+html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Inter',sans-serif;}}
+#scene{{
+  position:relative;width:100%;height:420px;
+  background:radial-gradient(ellipse at 20% 70%,#1a0240 0%,#06091a 45%,#030710 100%);
+  overflow:hidden;display:flex;align-items:center;justify-content:space-between;padding:0 36px;
+}}
+#scene::after{{
+  content:"";position:absolute;left:0;right:0;bottom:0;height:48%;
+  background:linear-gradient(rgba(139,92,246,.10) 1px,transparent 1px),
+             linear-gradient(90deg,rgba(56,189,248,.08) 1px,transparent 1px);
+  background-size:44px 44px;
+  transform:perspective(600px) rotateX(52deg);transform-origin:bottom center;
+  pointer-events:none;z-index:0;
+}}
+.panel{{flex:0 0 27%;position:relative;z-index:5;display:flex;flex-direction:column;align-items:flex-start;gap:0;}}
 .panel.right{{align-items:flex-end;text-align:right;}}
-.ptitle{{font-size:13px;font-weight:900;letter-spacing:4px;text-transform:uppercase;margin-bottom:4px;}}
-.psub{{font-size:11px;color:rgba(226,232,240,.82);margin-bottom:12px;}}
-.stats{{display:flex;gap:8px;flex-wrap:wrap;}}
-.stat{{display:flex;flex-direction:column;align-items:center;min-width:58px;padding:8px 10px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);}}
-.stat-v{{font-size:16px;font-weight:800;color:#fff;}}
-.stat-l{{font-size:8px;color:rgba(148,163,184,.8);letter-spacing:.08em;text-transform:uppercase;margin-top:4px;}}
-.cat-list{{display:grid;gap:10px;}}
-.cat-card{{display:flex;align-items:center;gap:10px;padding:14px;border-radius:18px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);cursor:pointer;transition:transform .15s ease,background .15s ease;}}
-.cat-card:hover{{transform:translateX(2px);background:rgba(255,255,255,.08);}}
-.cat-card.selected{{background:linear-gradient(135deg,#7c3aed 18%,#38bdf8 100%);border-color:rgba(255,255,255,.2);}}
-.cat-icon{{width:34px;height:34px;border-radius:12px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:16px;}}
-.cat-card.selected .cat-icon{{background:rgba(255,255,255,.18);}}
-.cat-body{{display:flex;flex-direction:column;gap:4px;}}
-.cat-label{{font-size:13px;font-weight:700;color:#fff;}}
-.cat-count{{font-size:11px;color:rgba(226,232,240,.74);}}
-.centre{{flex:0 0 32%;position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;}}
-.tagline{{font-size:12px;color:rgba(226,232,240,.72);text-align:center;letter-spacing:.08em;}}
-.middle-circle{{width:280px;height:280px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 30% 30%,rgba(59,130,246,.18),rgba(15,23,42,.98) 65%);box-shadow:0 18px 60px rgba(0,0,0,.3),inset 0 0 0 1px rgba(255,255,255,.05);}}
-.middle-circle::before{{content:'';position:absolute;inset:24px;border-radius:50%;border:1px dashed rgba(255,255,255,.12);}}
-.circle-inner{{position:relative;z-index:1;padding:22px;text-align:center;max-width:220px;}}
-.circle-title{{font-size:18px;font-weight:800;color:#fff;}}
-.circle-value{{font-size:36px;font-weight:900;color:#fff;margin:10px 0 6px;}}
-.circle-label{{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#94a3b8;margin-bottom:10px;display:block;}}
-.circle-meta{{font-size:13px;line-height:1.6;color:rgba(226,232,240,.88);}}
-.circle-meta span{{display:block;margin-top:8px;font-weight:600;color:rgba(255,255,255,.85);}}
-.wave-wrap{{position:absolute;top:50%;z-index:1;pointer-events:none;}}
-.wave-left{{left:12%;transform:translateY(-50%);}}
-.wave-right{{right:12%;transform:translateY(-50%);}}
+.ptitle{{font-size:13px;font-weight:900;letter-spacing:4px;text-transform:uppercase;margin-bottom:5px;}}
+.psub{{font-size:10px;margin-bottom:10px;opacity:.7;font-style:italic;}}
+.stats{{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;}}
+.panel.right .stats{{justify-content:flex-end;}}
+.stat{{display:flex;flex-direction:column;align-items:center;
+       background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+       border-radius:8px;padding:5px 9px;min-width:50px;}}
+.stat-v{{font-size:16px;font-weight:800;color:#fff;line-height:1.1;}}
+.stat-l{{font-size:7px;letter-spacing:.8px;color:rgba(255,255,255,.45);margin-top:2px;}}
+.centre{{flex:0 0 40%;display:flex;flex-direction:column;align-items:center;
+         justify-content:flex-start;padding-top:24px;position:relative;z-index:10;}}
+.tagline{{font-size:12px;color:rgba(255,255,255,.7);text-align:center;
+          margin-bottom:12px;line-height:1.6;letter-spacing:.2px;}}
+.tagline b{{color:rgba(255,255,255,.95);}}
+#nexbot-wrap{{
+  width:260px;height:260px;cursor:crosshair;overflow:hidden;
+  border-radius:50%;
+  box-shadow:0 0 70px #7c3aed55,0 0 130px #7c3aed22,0 0 35px #38bdf833;
+  position:relative;z-index:5;
+  background:radial-gradient(circle,#0d0525 30%,#030712 100%);
+}}
+.gring1{{width:200px;height:12px;border-radius:50%;margin-top:-4px;
+  background:radial-gradient(ellipse,rgba(124,58,237,.55) 0%,transparent 70%);
+  box-shadow:0 0 28px rgba(124,58,237,.4);}}
+.gring2{{width:140px;height:8px;border-radius:50%;margin-top:3px;
+  background:radial-gradient(ellipse,rgba(56,189,248,.35) 0%,transparent 70%);
+  box-shadow:0 0 16px rgba(56,189,248,.3);}}
+.wave-wrap{{position:absolute;top:50%;z-index:3;pointer-events:none;}}
+.wave-left{{left:28%;transform:translateY(-55%);}}
+.wave-right{{right:28%;transform:translateY(-55%);}}
 .wave-svg{{width:150px;height:80px;overflow:visible;}}
-body,html{{margin:0;padding:0;}}
-</style>
-</head><body>
+</style></head>
+<body>
 <div id="scene">
-  <div class="panel left">
-    <div class="ptitle" style="color:#c084fc;">AUTOMATION</div>
-    <div class="psub">⚙️ Robotic Process &amp; Workflow</div>
+
+  <!-- LEFT -->
+  <div class="panel">
+    <div class="ptitle" style="color:#c084fc;text-shadow:0 0 18px #c084fc88;">AUTOMATION</div>
+    <div class="psub" style="color:#c084fc;">\u2699\ufe0f Robotic Process &amp; Workflow</div>
     <div class="stats">
-      <div class="stat"><div class="stat-v">{auto_total}</div><div class="stat-l">Total</div></div>
-      <div class="stat"><div class="stat-v">{auto_done}</div><div class="stat-l">Done</div></div>
-      <div class="stat"><div class="stat-v">{auto_wip}</div><div class="stat-l">WIP</div></div>
-      <div class="stat"><div class="stat-v">{auto_roi}</div><div class="stat-l">ROI</div></div>
+      <div class="stat"><div class="stat-v" style="color:#c084fc;">{auto_total}</div><div class="stat-l">TOTAL</div></div>
+      <div class="stat"><div class="stat-v" style="color:#4ade80;">{auto_done}</div><div class="stat-l">DONE</div></div>
+      <div class="stat"><div class="stat-v" style="color:#38bdf8;">{auto_wip}</div><div class="stat-l">WIP</div></div>
+      <div class="stat"><div class="stat-v" style="color:#facc15;">{auto_roi}</div><div class="stat-l">ROI</div></div>
     </div>
-    <div class="cat-list">{html_buttons_left}</div>
+    <!-- Robotic arm SVG on purple pedestal -->
+    <svg width="130" height="170" viewBox="0 0 130 170" fill="none">
+      <ellipse cx="65" cy="158" rx="50" ry="11" fill="none" stroke="#7c3aed" stroke-width="2" opacity=".5"/>
+      <ellipse cx="65" cy="158" rx="58" ry="13" fill="none" stroke="#c084fc" stroke-width="1" opacity=".25"/>
+      <ellipse cx="65" cy="158" rx="42" ry="9"  fill="rgba(192,132,252,0.15)"/>
+      <rect x="52" y="136" width="26" height="26" rx="5" fill="#2d1154"/>
+      <rect x="48" y="127" width="34" height="13" rx="4" fill="#3b155e"/>
+      <rect x="60" y="78" width="13" height="53" rx="5" fill="#4a1a75" transform="rotate(-10 65 105)"/>
+      <circle cx="68" cy="78" r="9" fill="#5b1f8c"/>
+      <rect x="57" y="34" width="13" height="48" rx="5" fill="#5b1f8c" transform="rotate(15 65 58)"/>
+      <circle cx="62" cy="34" r="10" fill="#7c3aed"/>
+      <line x1="70" y1="20" x2="57" y2="8"  stroke="#c084fc" stroke-width="4" stroke-linecap="round"/>
+      <line x1="70" y1="20" x2="83" y2="7"  stroke="#c084fc" stroke-width="4" stroke-linecap="round"/>
+      <line x1="70" y1="20" x2="70" y2="4"  stroke="#c084fc" stroke-width="4" stroke-linecap="round"/>
+      <ellipse cx="65" cy="160" rx="38" ry="7" fill="rgba(124,58,237,0.3)"/>
+      <rect x="24" y="148" width="82" height="17" rx="4" fill="rgba(124,58,237,0.45)"/>
+      <text x="65" y="161" text-anchor="middle" fill="#c084fc" font-size="9" font-weight="800" letter-spacing="2">AUTOMATION</text>
+    </svg>
   </div>
 
+  <!-- WAVE LEFT -->
   <div class="wave-wrap wave-left">
     <svg class="wave-svg" viewBox="0 0 150 80">
       <defs><filter id="gp"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
-      <path d="M0 40 Q37 10,75 40 Q113 70,150 40" stroke="#c084fc" stroke-width="2.5" fill="none" filter="url(#gp)" opacity=".9"/>
-      <path d="M0 40 Q37 25,75 40 Q113 55,150 40" stroke="#7c3aed" stroke-width="1.5" fill="none" filter="url(#gp)" opacity=".6"/>
-      <circle r="3.5" fill="#c084fc" opacity=".95"/>
-      <circle r="2.5" fill="#e879f9" opacity=".8"/>
-      <circle r="2" fill="#a855f7" opacity=".6"/>
+      <path d="M0 40 Q37 10,75 40 Q113 70,150 40" stroke="#c084fc" stroke-width="2.5" fill="none" filter="url(#gp)" opacity=".9">
+        <animate attributeName="d" values="M0 40 Q37 10,75 40 Q113 70,150 40;M0 40 Q37 70,75 40 Q113 10,150 40;M0 40 Q37 10,75 40 Q113 70,150 40" dur="2.4s" repeatCount="indefinite"/>
+      </path>
+      <path d="M0 40 Q37 25,75 40 Q113 55,150 40" stroke="#7c3aed" stroke-width="1.5" fill="none" filter="url(#gp)" opacity=".6">
+        <animate attributeName="d" values="M0 40 Q37 25,75 40 Q113 55,150 40;M0 40 Q37 55,75 40 Q113 25,150 40;M0 40 Q37 25,75 40 Q113 55,150 40" dur="1.8s" repeatCount="indefinite"/>
+      </path>
+      <circle r="3.5" fill="#c084fc" opacity=".95"><animateMotion dur="2.4s" repeatCount="indefinite" path="M0 40 Q37 10,75 40 Q113 70,150 40"/></circle>
+      <circle r="2.5" fill="#e879f9" opacity=".8"><animateMotion dur="1.6s" repeatCount="indefinite" begin="0.8s" path="M0 40 Q37 25,75 40 Q113 55,150 40"/></circle>
+      <circle r="2" fill="#a855f7" opacity=".6"><animateMotion dur="2s" repeatCount="indefinite" begin="0.4s" path="M0 40 Q37 10,75 40 Q113 70,150 40"/></circle>
     </svg>
   </div>
 
-  {center_html}
+  <!-- CENTRE -->
+  <div class="centre">
+    <div class="tagline">
+      <b>Move your cursor across</b><br>
+      <span style="color:#c084fc;">&#8592;</span>
+      <span style="color:rgba(255,255,255,.6);"> to explore the synergy </span>
+      <span style="color:#38bdf8;">&#8594;</span>
+    </div>
+    <div id="nexbot-wrap">
+      <spline-viewer id="spline-nexbot"
+        url="https://prod.spline.design/kZDDjO5HmRHKWMYo/scene.splinecode"
+        style="width:260px;height:260px;display:block;" loading-anim="true">
+      </spline-viewer>
+    </div>
+    <div class="gring1"></div>
+    <div class="gring2"></div>
+  </div>
 
+  <!-- WAVE RIGHT -->
   <div class="wave-wrap wave-right">
     <svg class="wave-svg" viewBox="0 0 150 80">
       <defs><filter id="gc"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
-      <path d="M0 40 Q37 70,75 40 Q113 10,150 40" stroke="#38bdf8" stroke-width="2.5" fill="none" filter="url(#gc)" opacity=".9"/>
-      <path d="M0 40 Q37 55,75 40 Q113 25,150 40" stroke="#0ea5e9" stroke-width="1.5" fill="none" filter="url(#gc)" opacity=".6"/>
-      <circle r="3.5" fill="#38bdf8" opacity=".95"/>
-      <circle r="2.5" fill="#7dd3fc" opacity=".8"/>
-      <circle r="2" fill="#0ea5e9" opacity=".6"/>
+      <path d="M0 40 Q37 70,75 40 Q113 10,150 40" stroke="#38bdf8" stroke-width="2.5" fill="none" filter="url(#gc)" opacity=".9">
+        <animate attributeName="d" values="M0 40 Q37 70,75 40 Q113 10,150 40;M0 40 Q37 10,75 40 Q113 70,150 40;M0 40 Q37 70,75 40 Q113 10,150 40" dur="2.4s" repeatCount="indefinite"/>
+      </path>
+      <path d="M0 40 Q37 55,75 40 Q113 25,150 40" stroke="#0ea5e9" stroke-width="1.5" fill="none" filter="url(#gc)" opacity=".6">
+        <animate attributeName="d" values="M0 40 Q37 55,75 40 Q113 25,150 40;M0 40 Q37 25,75 40 Q113 55,150 40;M0 40 Q37 55,75 40 Q113 25,150 40" dur="1.8s" repeatCount="indefinite"/>
+      </path>
+      <circle r="3.5" fill="#38bdf8" opacity=".95"><animateMotion dur="2.4s" repeatCount="indefinite" path="M150 40 Q113 10,75 40 Q37 70,0 40"/></circle>
+      <circle r="2.5" fill="#7dd3fc" opacity=".8"><animateMotion dur="1.6s" repeatCount="indefinite" begin="0.8s" path="M150 40 Q113 25,75 40 Q37 55,0 40"/></circle>
+      <circle r="2" fill="#0ea5e9" opacity=".6"><animateMotion dur="2s" repeatCount="indefinite" begin="0.4s" path="M150 40 Q113 10,75 40 Q37 70,0 40"/></circle>
     </svg>
   </div>
 
+  <!-- RIGHT -->
   <div class="panel right">
-    <div class="ptitle" style="color:#38bdf8;">AI</div>
-    <div class="psub">🧠 Cognitive Intelligence &amp; ML</div>
+    <div class="ptitle" style="color:#38bdf8;text-shadow:0 0 18px #38bdf888;">AI</div>
+    <div class="psub" style="color:#38bdf8;">\U0001f9e0 Cognitive Intelligence &amp; ML</div>
     <div class="stats">
-      <div class="stat"><div class="stat-v">{ai_total}</div><div class="stat-l">Total</div></div>
-      <div class="stat"><div class="stat-v">{ai_done}</div><div class="stat-l">Done</div></div>
-      <div class="stat"><div class="stat-v">{ai_wip}</div><div class="stat-l">WIP</div></div>
-      <div class="stat"><div class="stat-v">{ai_roi}</div><div class="stat-l">ROI</div></div>
+      <div class="stat"><div class="stat-v" style="color:#38bdf8;">{ai_total}</div><div class="stat-l">TOTAL</div></div>
+      <div class="stat"><div class="stat-v" style="color:#4ade80;">{ai_done}</div><div class="stat-l">DONE</div></div>
+      <div class="stat"><div class="stat-v" style="color:#c084fc;">{ai_wip}</div><div class="stat-l">WIP</div></div>
+      <div class="stat"><div class="stat-v" style="color:#facc15;">{ai_roi}</div><div class="stat-l">ROI</div></div>
     </div>
-    <div class="cat-list">{html_buttons_right}</div>
+    <!-- Brain hologram SVG on blue pedestal -->
+    <svg width="130" height="170" viewBox="0 0 130 170" fill="none">
+      <ellipse cx="65" cy="158" rx="50" ry="11" fill="none" stroke="#0ea5e9" stroke-width="2" opacity=".5"/>
+      <ellipse cx="65" cy="158" rx="58" ry="13" fill="none" stroke="#38bdf8" stroke-width="1" opacity=".25"/>
+      <ellipse cx="65" cy="158" rx="42" ry="9"  fill="rgba(56,189,248,0.15)"/>
+      <rect x="52" y="136" width="26" height="26" rx="5" fill="#0c2a40"/>
+      <rect x="48" y="127" width="34" height="13" rx="4" fill="#0e3352"/>
+      <path d="M65 110 C44 110,30 96,30 79 C30 68,36 59,45 55 C43 50,42 45,44 40 C46 33,53 29,59 30 C61 25,65 21,70 21 C75 21,79 25,81 30 C87 29,94 33,96 40 C98 45,97 50,95 55 C104 59,110 68,110 79 C110 96,96 110,75 110 Z" fill="none" stroke="#38bdf8" stroke-width="1.8" opacity=".85"/>
+      <path d="M65 21 C64 57,64 87,65 110" stroke="#38bdf8" stroke-width="1" opacity=".35" stroke-dasharray="3 3"/>
+      <path d="M44 62 Q52 67,48 75 Q44 81,51 85" stroke="#38bdf8" stroke-width="1.3" fill="none" opacity=".65"/>
+      <path d="M50 51 Q59 60,55 68 Q51 76,57 80" stroke="#38bdf8" stroke-width="1.3" fill="none" opacity=".65"/>
+      <path d="M86 62 Q78 67,82 75 Q86 81,79 85" stroke="#38bdf8" stroke-width="1.3" fill="none" opacity=".65"/>
+      <path d="M80 51 Q71 60,75 68 Q79 76,73 80" stroke="#38bdf8" stroke-width="1.3" fill="none" opacity=".65"/>
+      <ellipse cx="65" cy="66" rx="22" ry="20" fill="rgba(56,189,248,0.10)"/>
+      <ellipse cx="65" cy="66" rx="10" ry="9"  fill="rgba(56,189,248,0.22)"/>
+      <ellipse cx="65" cy="160" rx="38" ry="7" fill="rgba(56,189,248,0.3)"/>
+      <rect x="48" y="148" width="34" height="17" rx="4" fill="rgba(14,165,233,0.45)"/>
+      <text x="65" y="161" text-anchor="middle" fill="#38bdf8" font-size="9" font-weight="800" letter-spacing="3">AI</text>
+    </svg>
   </div>
+
 </div>
-</body></html>'''
+<script>
+(function(){{
+  var _last=0;
+  document.addEventListener("mousemove",function(e){{
+    var now=Date.now();if(now-_last<16)return;_last=now;
+    var viewer=document.getElementById("spline-nexbot");
+    if(!viewer)return;
+    var root=viewer.shadowRoot||viewer;
+    var canvas=root.querySelector("canvas");
+    if(!canvas)return;
+    var cr=canvas.getBoundingClientRect();
+    var wr=document.getElementById("nexbot-wrap");
+    if(!wr)return;
+    var wRect=wr.getBoundingClientRect();
+    var nx=(e.clientX-wRect.left)/Math.max(wRect.width,1);
+    var ny=(e.clientY-wRect.top)/Math.max(wRect.height,1);
+    ["pointermove","mousemove"].forEach(function(t){{
+      canvas.dispatchEvent(new MouseEvent(t,{{
+        clientX:cr.left+nx*cr.width,clientY:cr.top+ny*cr.height,
+        bubbles:true,cancelable:true,view:window
+      }}));
+    }});
+  }});
+}})();
+</script>
+</body></html>"""
+    st.components.v1.html(_canvas_html, height=440, scrolling=False)
 
-    st.components.v1.html(canvas_html, height=520, scrolling=False)
-
-    # ── ROW 3: Charts row (Status BAR chart + Customer pie + clean Hours/Project) ─    st.markdown("##### 📈 Charts")
+    # ── ROW 3: Charts row (Status BAR chart + Customer pie + clean Hours/Project) ─
+    st.markdown("##### 📈 Charts")
     ch1, ch2, ch3 = st.columns(3)
 
     with ch1:
