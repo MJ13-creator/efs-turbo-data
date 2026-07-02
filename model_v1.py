@@ -1511,30 +1511,30 @@ def page_dashboard():
       .km-board:hover .km-track{{animation-play-state:paused;}}
       .km-board.paused .km-track{{animation-play-state:paused;}}
       .km-copy{{display:flex;gap:12px;}}
-      .km-card{{flex:0 0 250px;min-width:250px;padding:18px 20px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);display:grid;grid-template-rows:auto auto auto;gap:12px;min-height:150px;}}
-      .km-title{{font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.7);font-weight:700;}}
-      .km-body{{display:flex;align-items:center;gap:14px;width:70%;margin-inline:auto;min-height:70%;}}
-      .km-icon{{width:42px;height:42px;flex:0 0 42px;}}
+      .km-card{{flex:0 0 260px;min-width:260px;padding:18px 20px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);display:grid;grid-template-columns:60px 1fr;gap:12px;min-height:140px;align-items:start;}}
+      .km-icon{{width:56px;height:56px;flex:0 0 56px;display:grid;place-items:center;background:rgba(255,255,255,.1);border-radius:18px;}}
       .km-icon svg{{width:100%;height:100%;}}
-      .km-value-wrapper{{display:flex;flex-direction:column;justify-content:center;flex:1;gap:4px;}}
-      .km-value{{font-size:24px;font-weight:900;color:#fff;line-height:1.1;}}
-      .km-pct{{font-size:11px;font-weight:700;color:#f8fafc;opacity:.95;}}
-      .km-sub{{font-size:11px;color:rgba(255,255,255,.68);line-height:1.4;}}
+      .km-text{{display:grid;grid-template-rows:auto 1fr auto;gap:8px;min-height:100%;}}
+      .km-header{{font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.75);font-weight:700;}}
+      .km-card-body{{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;}}
+      .km-value{{font-size:24px;font-weight:900;color:#fff;line-height:1.05;}}
+      .km-pct{{font-size:12px;font-weight:700;color:#f8fafc;opacity:.95;white-space:nowrap;}}
+      .km-footer{{font-size:11px;color:rgba(255,255,255,.68);line-height:1.4;}}
       @keyframes km-scroll-left{{0%{{transform:translateX(0);}}100%{{transform:translateX(-50%);}}}}
     </style>
     <div class="km-board" id="km-board">
       <div class="km-track" id="km-track">
         <div class="km-copy">
-          <div class="km-card"><div class="km-title">Total Ideas</div><div class="km-body"><div class="km-icon" style="color:#1a4fad;">{icon_total}</div><div class="km-value-wrapper"><div class="km-value">{total}</div><div class="km-pct">All ideas</div></div></div><div class="km-sub">All ideas in the current view</div></div>
-          <div class="km-card"><div class="km-title">Completed</div><div class="km-body"><div class="km-icon" style="color:#059669;">{icon_completed}</div><div class="km-value-wrapper"><div class="km-value">{completed}</div><div class="km-pct">{completed_pct:.1f}%</div></div></div><div class="km-sub">Ideas marked completed</div></div>
-          <div class="km-card"><div class="km-title">Total Hrs Saved / yr</div><div class="km-body"><div class="km-icon" style="color:#0d9488;">{icon_hours}</div><div class="km-value-wrapper"><div class="km-value">{cust_hrs+int_hrs:,.0f}</div><div class="km-pct">Hours saved</div></div></div><div class="km-sub">Customer + Internal hours</div></div>
-          <div class="km-card"><div class="km-title">Total ROI</div><div class="km-body"><div class="km-icon" style="color:#b45309;">{icon_roi}</div><div class="km-value-wrapper"><div class="km-value">{cust_roi+int_roi}</div><div class="km-pct">ROI estimate</div></div></div><div class="km-sub">Customer + Internal ROI</div></div>
+          <div class="km-card"><div class="km-icon" style="color:#1a4fad;">{icon_total}</div><div class="km-text"><div class="km-header">Total Ideas</div><div class="km-card-body"><div class="km-value">{total}</div><div class="km-pct">All ideas</div></div><div class="km-footer">All ideas in the current view</div></div></div>
+          <div class="km-card"><div class="km-icon" style="color:#059669;">{icon_completed}</div><div class="km-text"><div class="km-header">Completed</div><div class="km-card-body"><div class="km-value">{completed}</div><div class="km-pct">{completed_pct:.1f}%</div></div><div class="km-footer">Ideas marked completed</div></div></div>
+          <div class="km-card"><div class="km-icon" style="color:#0d9488;">{icon_hours}</div><div class="km-text"><div class="km-header">Total Hrs Saved / yr</div><div class="km-card-body"><div class="km-value">{cust_hrs+int_hrs:,.0f}</div><div class="km-pct">Hours saved</div></div><div class="km-footer">Customer + Internal hours</div></div></div>
+          <div class="km-card"><div class="km-icon" style="color:#b45309;">{icon_roi}</div><div class="km-text"><div class="km-header">Total ROI</div><div class="km-card-body"><div class="km-value">{cust_roi+int_roi}</div><div class="km-pct">ROI estimate</div></div><div class="km-footer">Customer + Internal ROI</div></div></div>
         </div>
         <div class="km-copy">
-          <div class="km-card"><div class="km-title">Total Ideas</div><div class="km-body"><div class="km-icon" style="color:#1a4fad;">{icon_total}</div><div class="km-value-wrapper"><div class="km-value">{total}</div><div class="km-pct">All ideas</div></div></div><div class="km-sub">All ideas in the current view</div></div>
-          <div class="km-card"><div class="km-title">Completed</div><div class="km-body"><div class="km-icon" style="color:#059669;">{icon_completed}</div><div class="km-value-wrapper"><div class="km-value">{completed}</div><div class="km-pct">{completed_pct:.1f}%</div></div></div><div class="km-sub">Ideas marked completed</div></div>
-          <div class="km-card"><div class="km-title">Total Hrs Saved / yr</div><div class="km-body"><div class="km-icon" style="color:#0d9488;">{icon_hours}</div><div class="km-value-wrapper"><div class="km-value">{cust_hrs+int_hrs:,.0f}</div><div class="km-pct">Hours saved</div></div></div><div class="km-sub">Customer + Internal hours</div></div>
-          <div class="km-card"><div class="km-title">Total ROI</div><div class="km-body"><div class="km-icon" style="color:#b45309;">{icon_roi}</div><div class="km-value-wrapper"><div class="km-value">{cust_roi+int_roi}</div><div class="km-pct">ROI estimate</div></div></div><div class="km-sub">Customer + Internal ROI</div></div>
+          <div class="km-card"><div class="km-icon" style="color:#1a4fad;">{icon_total}</div><div class="km-text"><div class="km-header">Total Ideas</div><div class="km-card-body"><div class="km-value">{total}</div><div class="km-pct">All ideas</div></div><div class="km-footer">All ideas in the current view</div></div></div>
+          <div class="km-card"><div class="km-icon" style="color:#059669;">{icon_completed}</div><div class="km-text"><div class="km-header">Completed</div><div class="km-card-body"><div class="km-value">{completed}</div><div class="km-pct">{completed_pct:.1f}%</div></div><div class="km-footer">Ideas marked completed</div></div></div>
+          <div class="km-card"><div class="km-icon" style="color:#0d9488;">{icon_hours}</div><div class="km-text"><div class="km-header">Total Hrs Saved / yr</div><div class="km-card-body"><div class="km-value">{cust_hrs+int_hrs:,.0f}</div><div class="km-pct">Hours saved</div></div><div class="km-footer">Customer + Internal hours</div></div></div>
+          <div class="km-card"><div class="km-icon" style="color:#b45309;">{icon_roi}</div><div class="km-text"><div class="km-header">Total ROI</div><div class="km-card-body"><div class="km-value">{cust_roi+int_roi}</div><div class="km-pct">ROI estimate</div></div><div class="km-footer">Customer + Internal ROI</div></div></div>
         </div>
       </div>
     </div>
