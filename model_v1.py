@@ -414,7 +414,7 @@ def render_copyright():
 def page_header(title: str):
     st.markdown(f"""
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
-      <img src="{ALTEN_LOGO_URL}" style="height:28px;object-fit:contain;" alt="ALTEN"/>
+      <img src="{ALTEN_LOGO_URL}" style="height:36px;object-fit:contain;" alt="ALTEN"/>
       <span style="font-size:24px;font-weight:800;color:#E30613;letter-spacing:0.5px;">
          {title}
       </span>
@@ -570,8 +570,8 @@ def ss(key, default=None):
 #  interaction (button, dropdown, form submit, navigation, kanban move, etc.)
 #  triggers a rerun, and that rerun is what resets the timer here.
 # ══════════════════════════════════════════════════════════════════════════════
-SESSION_TIMEOUT_SECONDS = 300   # 5 minutes
-SESSION_WARNING_AT      = 240   # show warning after 4 minutes (60s before logout)
+SESSION_TIMEOUT_SECONDS = 600   # 5 minutes
+SESSION_WARNING_AT      = 340   # show warning after 4 minutes (60s before logout)
 
 def touch_activity():
     st.session_state["_last_activity"] = datetime.now()
@@ -1621,8 +1621,7 @@ def page_dashboard():
         selected_detail_html = '''
           <div class="detail-overlay">
             <div class="detail-card">
-              <div class="detail-title">Select a category</div>
-              <div class="detail-sub">Click any Automation or AI category to show details here.</div>
+              <img class="detail-image" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRk5gF2yYSpS4q60kNhN4hLGJ2aoRoseCFJAVrTfN8FSA&s=10" alt="Select a category" />
             </div>
           </div>'''
 
@@ -1932,63 +1931,79 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
                        "expandAndCollapse":True,"animationDuration":550,"initialTreeDepth":2}]
         }, height="400px")
 
-    with wl_col:
-        st.markdown("##### 🌍 Region — Word Map")
-        region_data = {}
-        for i in ideas:
-            r = i.get("region","") or ""
-            if not r:
-                continue   # skip ideas with no region set
-            if r not in region_data: region_data[r] = {"count":0,"roi":0.0}
-            region_data[r]["count"] += 1
-            region_data[r]["roi"]   += float(i.get("roi",0) or 0)
+        with wl_col:
+            st.markdown("##### 🌍 Region — World Map")
+            region_data = {}
+            for i in ideas:
+                r = (i.get("region","") or "").strip()
+                if not r:
+                    continue   # skip ideas with no region set
+                key = r.upper()
+                if key not in region_data:
+                    region_data[key] = {"count":0,"roi":0.0}
+                region_data[key]["count"] += 1
+                region_data[key]["roi"]   += float(i.get("roi",0) or 0)
 
-        no_region_count = len([i for i in ideas if not (i.get("region","") or "").strip()])
+            no_region_count = len([i for i in ideas if not (i.get("region","") or "").strip()])
 
-        if not region_data:
-            st.info(f"No region data yet — {no_region_count} idea(s) have no region assigned.")
-        else:
-            # ── Word-map: sized coloured bubbles (true word-cloud feel) ──
-            max_count = max(v["count"] for v in region_data.values()) or 1
-            sorted_regions = sorted(region_data.items(), key=lambda x: -x[1]["count"])
-            colors = [
-                "#E30613","#1a4fad","#059669","#7c3aed",
-                "#0891b2","#b45309","#9333ea","#0d9488",
-                "#0369a1","#16a34a","#dc2626","#d97706",
-            ]
-            wc_html = (
-                '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;' +
-                'justify-content:center;padding:18px 8px;'  +
-                'background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;'
-                'min-height:180px;">'
-            )
-            for idx,(region,val) in enumerate(sorted_regions):
-                ratio   = val["count"] / max_count          # 0.0 – 1.0
-                fs      = int(13 + ratio * 26)              # 13 – 39 px
-                pad_h   = int(8  + ratio * 14)
-                pad_v   = int(4  + ratio * 8)
-                alpha   = int(18 + ratio * 20)              # hex opacity 18–38
-                col_hex = colors[idx % len(colors)]
-                bg_hex  = col_hex + hex(alpha)[2:].zfill(2) # colour + alpha
-                tooltip = f"{region}: {val['count']} idea(s) · ROI {round(val['roi'],1)}"
-                wc_html += (
-                    f'<span title="{tooltip}" style="' +
-                    f'font-size:{fs}px;font-weight:{600 if ratio>0.5 else 500};' +
-                    f'color:{col_hex};background:{bg_hex};' +
-                    f'border-radius:8px;padding:{pad_v}px {pad_h}px;' +
-                    f'cursor:default;line-height:1.5;white-space:nowrap;'
-                    f'box-shadow:0 1px 3px rgba(0,0,0,.06);">' +
-                    f'{region}'
-                    f'<span style="font-size:{max(9,fs-10)}px;vertical-align:super;'
-                    f'margin-left:3px;opacity:0.7;">{val['count']}</span>'
-                    f'</span>'
-                )
-            wc_html += '</div>'
-            st.markdown(wc_html, unsafe_allow_html=True)
+            region_counts = {
+                "India": region_data.get("INDIA", {"count":0})["count"],
+                "USA": region_data.get("USA", {"count":0})["count"],
+                "UK": region_data.get("UK", {"count":0})["count"],
+                "Germany": region_data.get("GERMANY", {"count":0})["count"],
+            }
+
+            map_html = f"""
+            <style>
+              .region-map-shell {{position:relative;width:100%;min-height:360px;border-radius:22px;overflow:hidden;
+                background:#0b1222;border:1px solid rgba(255,255,255,.08);box-shadow:0 20px 50px rgba(0,0,0,.25);
+              }}
+              .region-map-shell::before {{content:'';position:absolute;inset:0;
+                background-image:url('https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg');
+                background-size:cover;background-position:center center;opacity:.18;filter:brightness(.95);
+              }}
+              .region-map-shell .region-overlay {{position:relative;z-index:1;padding:16px;display:grid;grid-template-rows:auto 1fr;gap:12px;}}
+              .region-map-shell .region-header {{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:0 6px;}}
+              .region-map-shell .region-title {{font-size:14px;font-weight:700;color:#f8fafc;}}
+              .region-map-shell .region-subtitle {{font-size:12px;color:rgba(248,250,252,.72);}}
+              .region-map-shell .region-pin {{position:absolute;display:inline-flex;align-items:center;justify-content:center;
+                min-width:72px;height:32px;padding:0 12px;border-radius:999px;background:rgba(255,255,255,.96);
+                color:#111;font-size:12px;font-weight:700;box-shadow:0 14px 32px rgba(0,0,0,.18);white-space:nowrap;
+              }}
+              .region-map-shell .region-pin.zero {{opacity:.45;}}
+              .region-map-shell .region-pin.india {{top:60%;left:66%;}}
+              .region-map-shell .region-pin.usa {{top:36%;left:18%;}}
+              .region-map-shell .region-pin.uk {{top:26%;left:30%;}}
+              .region-map-shell .region-pin.germany {{top:30%;left:39%;}}
+              .region-map-shell .region-legend {{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}}
+              .region-map-shell .legend-item {{display:flex;align-items:center;gap:8px;font-size:12px;color:#f8fafc;}}
+              .region-map-shell .legend-dot {{width:10px;height:10px;border-radius:50%;background:#facc15;}}
+            </style>
+            <div class="region-map-shell">
+              <div class="region-overlay">
+                <div class="region-header">
+                  <div>
+                    <div class="region-title">World Region Map</div>
+                    <div class="region-subtitle">Counts pinned to each region based on ideas</div>
+                  </div>
+                </div>
+                <div class="region-legend">
+                  <div class="legend-item"><span class="region-dot"></span> India: {region_counts['India']}</div>
+                  <div class="legend-item"><span class="region-dot"></span> USA: {region_counts['USA']}</div>
+                  <div class="legend-item"><span class="region-dot"></span> UK: {region_counts['UK']}</div>
+                  <div class="legend-item"><span class="region-dot"></span> Germany: {region_counts['Germany']}</div>
+                </div>
+              </div>
+              <div class="region-pin india{' zero' if region_counts['India']==0 else ''}" title="India: {region_counts['India']} idea(s)">India {region_counts['India']}</div>
+              <div class="region-pin usa{' zero' if region_counts['USA']==0 else ''}" title="USA: {region_counts['USA']} idea(s)">USA {region_counts['USA']}</div>
+              <div class="region-pin uk{' zero' if region_counts['UK']==0 else ''}" title="UK: {region_counts['UK']} idea(s)">UK {region_counts['UK']}</div>
+              <div class="region-pin germany{' zero' if region_counts['Germany']==0 else ''}" title="Germany: {region_counts['Germany']} idea(s)">Germany {region_counts['Germany']}</div>
+            </div>
+            """
+            st.markdown(map_html, unsafe_allow_html=True)
+
             if no_region_count:
                 st.caption(f"ℹ️ {no_region_count} idea(s) have no region assigned and are excluded.")
-            st.caption("Font size = idea count · Hover for count & ROI")
-
     # ── All Ideas table + CSV (above Kanban) ────────────────────────────
     st.markdown("##### 📄 All Ideas")
     search = st.text_input("🔎 Search ideas", placeholder="Filter by name, project, status…")
@@ -2193,7 +2208,7 @@ def main():
     with st.sidebar:
         st.markdown(f"""
         <div style="text-align:center;padding:10px 0 6px;">
-          <img src="{ALTEN_LOGO_URL}" style="height:22px;object-fit:contain;margin-bottom:4px;" alt="ALTEN"/><br>
+          <img src="{ALTEN_LOGO_URL}" style="height:36px;object-fit:contain;margin-bottom:4px;" alt="ALTEN"/><br>
           <span style="font-size:clamp(14px,1.5vw,20px);font-weight:900;
                background:linear-gradient(135deg,{t['primary']},{t['secondary']});
                -webkit-background-clip:text;background-clip:text;color:transparent;">
