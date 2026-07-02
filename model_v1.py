@@ -1470,29 +1470,42 @@ def page_dashboard():
         return total, completed, wip, uat, roi, hrs
 
     def _category_card(cat):
-        total, completed, wip, uat, roi, hrs = _cat_stats(cat)
+        count = len([i for i in ideas if i.get("automation_category") == cat])
         label = cat.split("-",1)[-1]
         icon = CATEGORY_ICONS.get(cat, "•")
         active = "selected" if selected_category == cat else ""
         return (
             f'<div class="category-card {active}" onclick="selectCategory(\'{cat}\')">'
-            f'<div class="category-header">'
-              f'<div class="category-icon">{icon}</div>'
-              f'<div class="category-body">'
-                f'<div class="category-name">{label}</div>'
-                f'<div class="category-count">{total} ideas</div>'
-              '</div>'
-            '</div>'
-            f'<div class="category-metrics">'
-              f'<div class="metric-line"><span>ROI</span><strong>{roi}</strong></div>'
-              f'<div class="metric-line"><span>Hours</span><strong>{hrs}</strong></div>'
-              f'<div class="metric-row"><span>{completed} Done</span><span>{wip} WIP</span><span>{uat} UAT</span></div>'
-            '</div>'
-            '</div>'
+            f'<div class="category-icon">{icon}</div>'
+            f'<div class="category-body">'
+            f'<div class="category-name">{label}</div>'
+            f'<div class="category-count">{count} ideas</div>'
+            '</div></div>'
         )
 
     left_category_html = "".join(_category_card(cat) for cat in AUTOMATION_CATS)
     right_category_html = "".join(_category_card(cat) for cat in AI_CATS)
+
+    if selected_category:
+        total, completed, wip, uat, roi, hrs = _cat_stats(selected_category)
+        selected_label = selected_category.split("-",1)[-1]
+        selected_detail_html = f'''
+          <div class="detail-overlay">
+            <div class="detail-card">
+              <div class="detail-title">{selected_label}</div>
+              <div class="detail-value">{total}</div>
+              <div class="detail-meta">ROI <strong>{roi}</strong> · {hrs:,.0f} hrs saved</div>
+              <div class="detail-sub">{completed} Done · {wip} WIP · {uat} UAT</div>
+            </div>
+          </div>'''
+    else:
+        selected_detail_html = '''
+          <div class="detail-overlay">
+            <div class="detail-card">
+              <div class="detail-title">Select a category</div>
+              <div class="detail-sub">Click any Automation or AI category to show details here.</div>
+            </div>
+          </div>'''
 
     _canvas_html = f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8"/>
@@ -1503,7 +1516,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
 #scene{{
   position:relative;width:100%;height:420px;
   background:radial-gradient(ellipse at 20% 70%,#1a0240 0%,#06091a 45%,#030710 100%);
-  overflow:hidden;display:flex;align-items:center;justify-content:space-between;padding:56px 36px 24px;
+  overflow:hidden;display:flex;align-items:center;justify-content:space-between;padding:0 36px;
 }}
 #scene::after{{
   content:"";position:absolute;left:0;right:0;bottom:0;height:48%;
@@ -1529,11 +1542,6 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
 .tagline{{font-size:12px;color:rgba(255,255,255,.7);text-align:center;
           margin-bottom:12px;line-height:1.6;letter-spacing:.2px;}}
 .tagline b{{color:rgba(255,255,255,.95);}}
-#running-board{{position:absolute;top:18px;left:36px;right:36px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;z-index:6;}}
-.board-chip{{padding:14px 18px;border-radius:18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(14px);box-shadow:0 18px 50px rgba(15,23,42,.18);}}
-.board-label{{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.68);margin-bottom:8px;}}
-.board-value{{font-size:20px;font-weight:900;color:#fff;line-height:1.05;}}
-.board-sub{{font-size:11px;color:rgba(255,255,255,.68);margin-top:5px;}}
 #nexbot-wrap{{
   width:260px;height:260px;cursor:crosshair;overflow:hidden;
   border-radius:50%;
@@ -1541,22 +1549,23 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
   position:relative;z-index:5;
   background:radial-gradient(circle,#0d0525 30%,#030712 100%);
 }}
-.category-grid{{display:grid;gap:12px;}}
-.category-card{{display:flex;flex-direction:column;gap:10px;padding:16px 16px;border-radius:22px;
-  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);cursor:pointer;transition:transform .18s ease,background .18s ease,border-color .18s ease;
+.category-grid{{display:grid;gap:10px;}}
+.category-card{{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:18px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);cursor:pointer;transition:transform .18s ease,background .18s ease,border-color .18s ease;
 }}
-.category-card:hover{{transform:translateY(-1px);background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.16);}}
+.category-card:hover{{transform:translateY(-1px);background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.18);}}
 .category-card.selected{{background:linear-gradient(135deg,rgba(56,189,248,.18),rgba(124,58,237,.18));border-color:rgba(56,189,248,.35);}}
-.category-header{{display:flex;align-items:center;gap:12px;}}
-.category-icon{{width:42px;height:42px;border-radius:16px;display:grid;place-items:center;
-  background:rgba(255,255,255,.08);color:#fff;font-size:20px;}}
-.category-body{{display:flex;flex-direction:column;gap:4px;}}
-.category-name{{font-size:12px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#fff;}}
-.category-count{{font-size:11px;color:rgba(255,255,255,.75);}}
-.category-metrics{{display:flex;flex-direction:column;gap:8px;}}
-.metric-line{{display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,.7);}}
-.metric-line strong{{color:#fff;}}
-.metric-row{{display:flex;justify-content:space-between;gap:8px;font-size:10px;color:rgba(255,255,255,.65);flex-wrap:wrap;}}
+.category-icon{{width:38px;height:38px;border-radius:14px;display:grid;place-items:center;
+  background:rgba(255,255,255,.08);color:#fff;font-size:18px;}}
+.category-body{{display:flex;flex-direction:column;gap:3px;}}
+.category-name{{font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#fff;}}
+.category-count{{font-size:10px;color:rgba(255,255,255,.7);}}
+.detail-overlay{{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}}
+.detail-card{{width:min(220px,90%);padding:16px 18px;border-radius:22px;background:rgba(8,12,30,.92);border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(8px);box-shadow:0 18px 80px rgba(15,23,42,.35);text-align:center;}}
+.detail-title{{font-size:15px;font-weight:800;color:#f8fafc;margin-bottom:6px;}}
+.detail-value{{font-size:28px;font-weight:900;color:#e0e7ff;margin-bottom:6px;}}
+.detail-meta{{font-size:11px;color:rgba(148,163,184,.95);margin-bottom:4px;}}
+.detail-sub{{font-size:11px;color:rgba(148,163,184,.75);line-height:1.4;}}
 .gring1{{width:200px;height:12px;border-radius:50%;margin-top:-4px;
   background:radial-gradient(ellipse,rgba(124,58,237,.55) 0%,transparent 70%);
   box-shadow:0 0 28px rgba(124,58,237,.4);}}
@@ -1572,34 +1581,22 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
 <div id="scene">
 
   <!-- LEFT -->
-  <div id="running-board">
-    <div class="board-chip">
-      <div class="board-label">Automation Ideas</div>
-      <div class="board-value">{auto_total}</div>
-      <div class="board-sub">Overall ideas in automation</div>
-    </div>
-    <div class="board-chip">
-      <div class="board-label">AI Ideas</div>
-      <div class="board-value">{ai_total}</div>
-      <div class="board-sub">Overall ideas in AI</div>
-    </div>
-    <div class="board-chip">
-      <div class="board-label">Automation ROI</div>
-      <div class="board-value">{auto_roi}</div>
-      <div class="board-sub">Total automation ROI</div>
-    </div>
-    <div class="board-chip">
-      <div class="board-label">AI ROI</div>
-      <div class="board-value">{ai_roi}</div>
-      <div class="board-sub">Total AI ROI</div>
-    </div>
-  </div>
   <div class="panel">
     <div class="ptitle" style="color:#c084fc;text-shadow:0 0 18px #c084fc88;">AUTOMATION</div>
-    <div class="psub" style="color:#c084fc;">⚙️ Robotic Process &amp; Workflow</div>
+    <div class="psub" style="color:#c084fc;">\u2699\ufe0f Robotic Process &amp; Workflow</div>
+    <div class="stats">
+      <div class="stat"><div class="stat-v" style="color:#c084fc;">{auto_total}</div><div class="stat-l">TOTAL</div></div>
+      <div class="stat"><div class="stat-v" style="color:#4ade80;">{auto_done}</div><div class="stat-l">DONE</div></div>
+      <div class="stat"><div class="stat-v" style="color:#38bdf8;">{auto_wip}</div><div class="stat-l">WIP</div></div>
+      <div class="stat"><div class="stat-v" style="color:#facc15;">{auto_roi}</div><div class="stat-l">ROI</div></div>
+    </div>
     <div class="category-grid">{left_category_html}</div>
   </div>
 
+  <!-- WAVE LEFT -->
+  <div class="wave-wrap wave-left">
+    <svg class="wave-svg" viewBox="0 0 150 80">
+      <defs><filter id="gp"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
       <path d="M0 40 Q37 10,75 40 Q113 70,150 40" stroke="#c084fc" stroke-width="2.5" fill="none" filter="url(#gp)" opacity=".9">
         <animate attributeName="d" values="M0 40 Q37 10,75 40 Q113 70,150 40;M0 40 Q37 70,75 40 Q113 10,150 40;M0 40 Q37 10,75 40 Q113 70,150 40" dur="2.4s" repeatCount="indefinite"/>
       </path>
@@ -1625,6 +1622,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
         url="https://prod.spline.design/kZDDjO5HmRHKWMYo/scene.splinecode"
         style="width:260px;height:260px;display:block;" loading-anim="true">
       </spline-viewer>
+      {selected_detail_html}
     </div>
     <div class="gring1"></div>
     <div class="gring2"></div>
@@ -1650,9 +1648,19 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
   <div class="panel right">
     <div class="ptitle" style="color:#38bdf8;text-shadow:0 0 18px #38bdf888;">AI</div>
     <div class="psub" style="color:#38bdf8;">🧠 Cognitive Intelligence &amp; ML</div>
+    <div class="stats">
+      <div class="stat"><div class="stat-v" style="color:#38bdf8;">{ai_total}</div><div class="stat-l">TOTAL</div></div>
+      <div class="stat"><div class="stat-v" style="color:#4ade80;">{ai_done}</div><div class="stat-l">DONE</div></div>
+      <div class="stat"><div class="stat-v" style="color:#c084fc;">{ai_wip}</div><div class="stat-l">WIP</div></div>
+      <div class="stat"><div class="stat-v" style="color:#facc15;">{ai_roi}</div><div class="stat-l">ROI</div></div>
+    </div>
     <div class="category-grid">{right_category_html}</div>
   </div>
 
+</div>
+<script>
+(function(){{
+  var _last=0;
   document.addEventListener("mousemove",function(e){{
     var now=Date.now();if(now-_last<16)return;_last=now;
     var viewer=document.getElementById("spline-nexbot");
