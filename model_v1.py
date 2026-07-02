@@ -1596,10 +1596,9 @@ def page_dashboard():
         return (
             f'<div class="category-card {active}" onclick="selectCategory(\'{cat}\')">'
             f'<div class="category-icon">{icon}</div>'
-            f'<div class="category-body">'
+            f'<div class="category-count">{count}</div>'
             f'<div class="category-name">{label}</div>'
-            f'<div class="category-count">{count} ideas</div>'
-            '</div></div>'
+            '</div>'
         )
 
     left_category_html = "".join(_category_card(cat) for cat in AUTOMATION_CATS)
@@ -1683,9 +1682,8 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
 .category-card.selected{{background:linear-gradient(135deg,rgba(56,189,248,.18),rgba(124,58,237,.18));border-color:rgba(56,189,248,.35);}}
 .category-icon{{width:38px;height:38px;border-radius:14px;display:grid;place-items:center;
   background:rgba(255,255,255,.08);color:#fff;font-size:18px;}}
-.category-body{{display:flex;flex-direction:column;gap:3px;}}
 .category-name{{font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#fff;}}
-.category-count{{font-size:10px;color:rgba(255,255,255,.7);}}
+.category-count{{font-size:14px;font-weight:800;color:#fff;}}
 .detail-overlay{{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}}
 .detail-card{{width:min(220px,90%);padding:16px 18px;border-radius:22px;background:rgba(8,12,30,.92);border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(8px);box-shadow:0 18px 80px rgba(15,23,42,.35);text-align:center;}}
 .detail-card.detail-card--circle{{width:160px;height:160px;padding:0;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;}}
