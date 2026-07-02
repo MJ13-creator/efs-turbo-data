@@ -1525,7 +1525,7 @@ def page_dashboard():
         selected_detail_html = '''
           <div class="detail-overlay">
             <div class="detail-card">
-              <div class="detail-title">"https://community.spline.design/file/401875e7-6d8e-4027-9632-7a243433f3a1"</div>
+              <img class="detail-image" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRk5gF2yYSpS4q60kNhN4hLGJ2aoRoseCFJAVrTfN8FSA&s=10" alt="Select a category" />
             </div>
           </div>'''
 
@@ -1591,7 +1591,8 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
 .category-name{{font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#fff;}}
 .category-count{{font-size:10px;color:rgba(255,255,255,.7);}}
 .detail-overlay{{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}}
-.detail-card{{width:min(220px,90%);padding:16px 18px;border-radius:22px;background:rgba(8,12,30,.92);border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(8px);box-shadow:0 18px 80px rgba(15,23,42,.35);text-align:center;}}
+.detail-card{{width:min(420px,90%);padding:16px 18px;border-radius:22px;background:rgba(8,12,30,.92);border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(8px);box-shadow:0 18px 80px rgba(15,23,42,.35);text-align:center;}}
+.detail-image{{width:100%;height:auto;border-radius:18px;display:block;max-height:calc(100vh - 260px);object-fit:contain;}}
 .detail-title{{font-size:15px;font-weight:800;color:#f8fafc;margin-bottom:6px;}}
 .detail-value{{font-size:28px;font-weight:900;color:#e0e7ff;margin-bottom:6px;}}
 .detail-meta{{font-size:11px;color:rgba(148,163,184,.95);margin-bottom:4px;}}
