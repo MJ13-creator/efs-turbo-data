@@ -1490,6 +1490,7 @@ def page_dashboard():
     cust_cnt  = cnt_cat("Customer Requirement")
     int_cnt   = cnt_cat("Internal")
     completed = cnt("Completed")
+    completed_pct = round(completed / total * 100, 1) if total else 0.0
 
     # ── ROW 1: Premium Illustrated KPI Cards ───────────────────────────────
     st.markdown("##### 📦 Key Metrics")
@@ -1506,32 +1507,53 @@ def page_dashboard():
     st.markdown(f"""
     <style>
       .km-board{{position:relative;overflow:hidden;margin-bottom:22px;border-radius:24px;border:1px solid rgba(255,255,255,.12);background:rgba(15,23,42,.85);box-shadow:0 18px 50px rgba(15,23,42,.25);}}
-      .km-track{{display:flex;gap:12px;width:max-content;animation:km-scroll-left 20s linear infinite;}}
+      .km-track{{display:flex;gap:12px;width:max-content;animation:km-scroll-left 20s linear infinite;animation-play-state:running;}}
+      .km-board:hover .km-track{{animation-play-state:paused;}}
+      .km-board.paused .km-track{{animation-play-state:paused;}}
       .km-copy{{display:flex;gap:12px;}}
-      .km-card{{flex:0 0 250px;min-width:250px;padding:18px 20px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);}}
-      .km-icon{{width:40px;height:40px;margin-bottom:14px;}}
+      .km-card{{flex:0 0 250px;min-width:250px;padding:18px 20px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);display:grid;grid-template-rows:auto auto auto;gap:12px;min-height:150px;}}
+      .km-title{{font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.7);font-weight:700;}}
+      .km-body{{display:flex;align-items:center;gap:14px;width:70%;margin-inline:auto;min-height:70%;}}
+      .km-icon{{width:42px;height:42px;flex:0 0 42px;}}
       .km-icon svg{{width:100%;height:100%;}}
-      .km-label{{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.72);margin-bottom:8px;}}
-      .km-value{{font-size:20px;font-weight:800;color:#fff;line-height:1.1;}}
-      .km-sub{{font-size:11px;color:rgba(255,255,255,.68);margin-top:6px;}}
+      .km-value-wrapper{{display:flex;flex-direction:column;justify-content:center;flex:1;gap:4px;}}
+      .km-value{{font-size:24px;font-weight:900;color:#fff;line-height:1.1;}}
+      .km-pct{{font-size:11px;font-weight:700;color:#f8fafc;opacity:.95;}}
+      .km-sub{{font-size:11px;color:rgba(255,255,255,.68);line-height:1.4;}}
       @keyframes km-scroll-left{{0%{{transform:translateX(0);}}100%{{transform:translateX(-50%);}}}}
     </style>
-    <div class="km-board">
-      <div class="km-track">
+    <div class="km-board" id="km-board">
+      <div class="km-track" id="km-track">
         <div class="km-copy">
-          <div class="km-card"><div class="km-icon" style="color:#1a4fad;">{icon_total}</div><div class="km-label">Total Ideas</div><div class="km-value">{total}</div><div class="km-sub">All ideas in the current view</div></div>
-          <div class="km-card"><div class="km-icon" style="color:#059669;">{icon_completed}</div><div class="km-label">Completed</div><div class="km-value">{completed}</div><div class="km-sub">Ideas marked completed</div></div>
-          <div class="km-card"><div class="km-icon" style="color:#0d9488;">{icon_hours}</div><div class="km-label">Total Hrs Saved / yr</div><div class="km-value">{cust_hrs+int_hrs:,.0f}</div><div class="km-sub">Customer + Internal hours</div></div>
-          <div class="km-card"><div class="km-icon" style="color:#b45309;">{icon_roi}</div><div class="km-label">Total ROI</div><div class="km-value">{cust_roi+int_roi}</div><div class="km-sub">Customer + Internal ROI</div></div>
+          <div class="km-card"><div class="km-title">Total Ideas</div><div class="km-body"><div class="km-icon" style="color:#1a4fad;">{icon_total}</div><div class="km-value-wrapper"><div class="km-value">{total}</div><div class="km-pct">All ideas</div></div></div><div class="km-sub">All ideas in the current view</div></div>
+          <div class="km-card"><div class="km-title">Completed</div><div class="km-body"><div class="km-icon" style="color:#059669;">{icon_completed}</div><div class="km-value-wrapper"><div class="km-value">{completed}</div><div class="km-pct">{completed_pct:.1f}%</div></div></div><div class="km-sub">Ideas marked completed</div></div>
+          <div class="km-card"><div class="km-title">Total Hrs Saved / yr</div><div class="km-body"><div class="km-icon" style="color:#0d9488;">{icon_hours}</div><div class="km-value-wrapper"><div class="km-value">{cust_hrs+int_hrs:,.0f}</div><div class="km-pct">Hours saved</div></div></div><div class="km-sub">Customer + Internal hours</div></div>
+          <div class="km-card"><div class="km-title">Total ROI</div><div class="km-body"><div class="km-icon" style="color:#b45309;">{icon_roi}</div><div class="km-value-wrapper"><div class="km-value">{cust_roi+int_roi}</div><div class="km-pct">ROI estimate</div></div></div><div class="km-sub">Customer + Internal ROI</div></div>
         </div>
         <div class="km-copy">
-          <div class="km-card"><div class="km-icon" style="color:#1a4fad;">{icon_total}</div><div class="km-label">Total Ideas</div><div class="km-value">{total}</div><div class="km-sub">All ideas in the current view</div></div>
-          <div class="km-card"><div class="km-icon" style="color:#059669;">{icon_completed}</div><div class="km-label">Completed</div><div class="km-value">{completed}</div><div class="km-sub">Ideas marked completed</div></div>
-          <div class="km-card"><div class="km-icon" style="color:#0d9488;">{icon_hours}</div><div class="km-label">Total Hrs Saved / yr</div><div class="km-value">{cust_hrs+int_hrs:,.0f}</div><div class="km-sub">Customer + Internal hours</div></div>
-          <div class="km-card"><div class="km-icon" style="color:#b45309;">{icon_roi}</div><div class="km-label">Total ROI</div><div class="km-value">{cust_roi+int_roi}</div><div class="km-sub">Customer + Internal ROI</div></div>
+          <div class="km-card"><div class="km-title">Total Ideas</div><div class="km-body"><div class="km-icon" style="color:#1a4fad;">{icon_total}</div><div class="km-value-wrapper"><div class="km-value">{total}</div><div class="km-pct">All ideas</div></div></div><div class="km-sub">All ideas in the current view</div></div>
+          <div class="km-card"><div class="km-title">Completed</div><div class="km-body"><div class="km-icon" style="color:#059669;">{icon_completed}</div><div class="km-value-wrapper"><div class="km-value">{completed}</div><div class="km-pct">{completed_pct:.1f}%</div></div></div><div class="km-sub">Ideas marked completed</div></div>
+          <div class="km-card"><div class="km-title">Total Hrs Saved / yr</div><div class="km-body"><div class="km-icon" style="color:#0d9488;">{icon_hours}</div><div class="km-value-wrapper"><div class="km-value">{cust_hrs+int_hrs:,.0f}</div><div class="km-pct">Hours saved</div></div></div><div class="km-sub">Customer + Internal hours</div></div>
+          <div class="km-card"><div class="km-title">Total ROI</div><div class="km-body"><div class="km-icon" style="color:#b45309;">{icon_roi}</div><div class="km-value-wrapper"><div class="km-value">{cust_roi+int_roi}</div><div class="km-pct">ROI estimate</div></div></div><div class="km-sub">Customer + Internal ROI</div></div>
         </div>
       </div>
     </div>
+    <script>
+      const board = document.getElementById('km-board');
+      let lastTap = 0;
+      if (board) {{
+        board.addEventListener('dblclick', function() {{ board.classList.toggle('paused'); }});
+        board.addEventListener('touchend', function(event) {{
+          const currentTime = new Date().getTime();
+          const tapLength = currentTime - lastTap;
+          if (tapLength < 500 && tapLength > 0) {{
+            board.classList.toggle('paused');
+            event.preventDefault();
+          }}
+          lastTap = currentTime;
+        }});
+      }}
+    </script>
     """, unsafe_allow_html=True)
 
     # second KPI row removed
