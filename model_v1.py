@@ -1433,7 +1433,7 @@ def page_dashboard():
     all_regs = sorted({i.get("region","")   for i in all_ideas_raw if i.get("region","")})
     all_cats = CATEGORIES
 
-    st.markdown('<div class="filter-bar">', unsafe_allow_html=True)
+    #st.markdown('<div class="filter-bar">', unsafe_allow_html=True)
     fc1, fc2, fc3, fc4 = st.columns([1.2, 1.2, 1.2, 0.5])
     with fc1:
         f_cat = st.multiselect("Category", all_cats, key="f_cat",
