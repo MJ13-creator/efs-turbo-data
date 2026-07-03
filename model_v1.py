@@ -1418,9 +1418,9 @@ def page_dashboard():
     with _br:
         st.markdown(
             f'<div style="background:linear-gradient(135deg,#1a4fad,#0ea5e9);'
-            f'border-radius:14px;padding:10px 14px;text-align:center;'
+            f'border-radius:9px;padding:10px 9px;text-align:center;'
             f'box-shadow:0 4px 20px rgba(26,79,173,.35);margin-bottom:8px;">'
-            f'<div style="display:flex;gap:18px;justify-content:center;align-items:center;">'
+            f'<div style="display:flex;gap:9px;justify-content:center;align-items:center;">'
             f'<div><div style="font-size:8px;color:rgba(255,255,255,.8);letter-spacing:.8px;'
             f'text-transform:uppercase;font-weight:600;">&#128101; Registered</div>'
             f'<div style="font-size:30px;font-weight:800;color:#fff;line-height:1.1;">{total_registered}</div></div>'
@@ -1513,7 +1513,7 @@ def page_dashboard():
       .km-text{{display:grid;grid-template-rows:auto 1fr auto;gap:8px;min-height:100%;}}
       .km-header{{font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.75);font-weight:700;}}
       .km-card-body{{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}}
-      .km-value{{font-size:32px;font-weight:900;color:#fff;line-height:1.05;}}
+      .km-value{{font-size:45px;font-weight:900;color:#fff;line-height:1.05;}}
       .km-pct{{font-size:12px;font-weight:700;color:#f8fafc;opacity:.95;white-space:nowrap;}}
       .km-footer{{font-size:11px;color:rgba(255,255,255,.68);line-height:1.4;min-height:18px;}}
       @keyframes km-scroll-left{{0%{{transform:translateX(0);}}100%{{transform:translateX(-50%);}}}}
@@ -1981,8 +1981,8 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
               <div class="region-overlay">
                 <div class="region-header">
                   <div>
-                    <div class="region-title">World Region Map</div>
-                    <div class="region-subtitle">Idea counts highlighted directly on each pinned region</div>
+                    <div class="region-title"></div>
+                    <div class="region-subtitle"></div>
                   </div>
                 </div>
               </div>
