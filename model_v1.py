@@ -1424,10 +1424,6 @@ def page_dashboard():
             f'<div><div style="font-size:8px;color:rgba(255,255,255,.8);letter-spacing:.8px;'
             f'text-transform:uppercase;font-weight:600;">&#128101; Registered</div>'
             f'<div style="font-size:30px;font-weight:800;color:#fff;line-height:1.1;">{total_registered}</div></div>'
-            f'<div style="width:1px;height:40px;background:rgba(255,255,255,.3);"></div>'
-            f'<div><div style="font-size:8px;color:rgba(255,255,255,.8);letter-spacing:.8px;'
-            f'text-transform:uppercase;font-weight:600;">&#129001; Active Now</div>'
-            f'<div style="font-size:30px;font-weight:800;color:#4ade80;line-height:1.1;">{active_count}</div></div>'
             f'</div></div>',
             unsafe_allow_html=True
         )
@@ -1512,7 +1508,7 @@ def page_dashboard():
       .km-board.paused .km-track{{animation-play-state:paused;}}
       .km-copy{{display:flex;gap:12px;}}
       .km-card{{flex:0 0 260px;min-width:260px;padding:18px 20px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);display:grid;grid-template-columns:60px 1fr;gap:12px;min-height:140px;align-items:start;}}
-      .km-icon{{width:56px;height:75px;flex:0 0 56px;display:grid;place-items:center;background:rgba(255,255,255,.1);border-radius:18px;}}
+      .km-icon{{width:56px;height:90px;flex:0 0 56px;display:grid;place-items:center;background:rgba(255,255,255,.1);border-radius:18px;}}
       .km-icon svg{{width:100%;height:100%;}}
       .km-text{{display:grid;grid-template-rows:auto 1fr auto;gap:8px;min-height:100%;}}
       .km-header{{font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.75);font-weight:700;}}
@@ -1525,14 +1521,14 @@ def page_dashboard():
     <div class="km-board" id="km-board">
       <div class="km-track" id="km-track">
         <div class="km-copy">
-          <div class="km-card"><div class="km-icon" style="color:#facc15;">{icon_total}</div><div class="km-text"><div class="km-header">Total Ideas</div><div class="km-card-body"><div class="km-value">{total}</div><div class="km-pct">All ideas</div></div><div class="km-footer"></div></div></div>
-          <div class="km-card"><div class="km-icon" style="color:#059669;">{icon_completed}</div><div class="km-text"><div class="km-header">Completed</div><div class="km-card-body"><div class="km-value">{completed}</div><div class="km-pct">{completed_pct:.1f}%</div></div><div class="km-footer"></div></div></div>
+          <div class="km-card"><div class="km-icon" style="color:#facc15;">{icon_total}</div><div class="km-text"><div class="km-header">Total Ideas</div><div class="km-card-body"><div class="km-value">{total}</div><div class="km-pct"></div></div><div class="km-footer"></div></div></div>
+          <div class="km-card"><div class="km-icon" style="color:#059669;">{icon_completed}</div><div class="km-text"><div class="km-header">Completed</div><div class="km-card-body"><div class="km-value">{completed}</div><div class="km-pct">{completed_pct:.1f}</div></div><div class="km-footer"></div></div></div>
           <div class="km-card"><div class="km-icon" style="color:#0d9488;">{icon_hours}</div><div class="km-text"><div class="km-header">Total Hrs Saved / yr</div><div class="km-card-body"><div class="km-value">{cust_hrs+int_hrs:,.0f}</div><div class="km-pct"></div></div><div class="km-footer">Customer + Internal hours</div></div></div>
           <div class="km-card"><div class="km-icon" style="color:#b45309;">{icon_roi}</div><div class="km-text"><div class="km-header">Total ROI</div><div class="km-card-body"><div class="km-value">{cust_roi+int_roi}</div><div class="km-pct"></div></div><div class="km-footer">Customer + Internal ROI</div></div></div>
         </div>
         <div class="km-copy">
-          <div class="km-card"><div class="km-icon" style="color:#facc15;">{icon_total}</div><div class="km-text"><div class="km-header">Total Ideas</div><div class="km-card-body"><div class="km-value">{total}</div><div class="km-pct">All ideas</div></div><div class="km-footer"></div></div></div>
-          <div class="km-card"><div class="km-icon" style="color:#059669;">{icon_completed}</div><div class="km-text"><div class="km-header">Completed</div><div class="km-card-body"><div class="km-value">{completed}</div><div class="km-pct">{completed_pct:.1f}%</div></div><div class="km-footer"></div></div></div>
+          <div class="km-card"><div class="km-icon" style="color:#facc15;">{icon_total}</div><div class="km-text"><div class="km-header">Total Ideas</div><div class="km-card-body"><div class="km-value">{total}</div><div class="km-pct"></div></div><div class="km-footer"></div></div></div>
+          <div class="km-card"><div class="km-icon" style="color:#059669;">{icon_completed}</div><div class="km-text"><div class="km-header">Completed</div><div class="km-card-body"><div class="km-value">{completed}</div><div class="km-pct">{completed_pct:.1f}</div></div><div class="km-footer"></div></div></div>
           <div class="km-card"><div class="km-icon" style="color:#0d9488;">{icon_hours}</div><div class="km-text"><div class="km-header">Total Hrs Saved / yr</div><div class="km-card-body"><div class="km-value">{cust_hrs+int_hrs:,.0f}</div><div class="km-pct"></div></div><div class="km-footer">Customer + Internal hours</div></div></div>
           <div class="km-card"><div class="km-icon" style="color:#b45309;">{icon_roi}</div><div class="km-text"><div class="km-header">Total ROI</div><div class="km-card-body"><div class="km-value">{cust_roi+int_roi}</div><div class="km-pct"></div></div><div class="km-footer">Customer + Internal ROI</div></div></div>
         </div>
@@ -1707,8 +1703,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
 <div id="scene">
 
   <div class="panel">
-    <div class="ptitle" style="color:#c084fc;text-shadow:0 0 18px #c084fc88;">AUTOMATION</div>
-    <div class="psub" style="color:#c084fc;">⚙️ Robotic Process &amp; Workflow</div>
+    <div class="ptitle" style="color:#c084fc;text-shadow:0 0 18px #c084fc88;">-AUTOMATION-</div>
     <div class="category-grid">{left_category_html}</div>
   </div>
 
@@ -1731,9 +1726,9 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
   <!-- CENTRE -->
   <div class="centre">
     <div class="tagline">
-      <b>Move your cursor across</b><br>
+      <b></b><br>
       <span style="color:#c084fc;">&#8592;</span>
-      <span style="color:rgba(255,255,255,.6);"> to explore the synergy </span>
+      <span style="color:rgba(255,255,255,.6);"> </span>
       <span style="color:#38bdf8;">&#8594;</span>
     </div>
     <div id="nexbot-wrap">
@@ -1765,8 +1760,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
 
   <!-- RIGHT -->
   <div class="panel right">
-    <div class="ptitle" style="color:#38bdf8;text-shadow:0 0 18px #38bdf888;">AI</div>
-    <div class="psub" style="color:#38bdf8;">🧠 Cognitive Intelligence &amp; ML</div>
+    <div class="ptitle" style="color:#38bdf8;text-shadow:0 0 18px #38bdf888;">-AI-</div>
     <div class="category-grid">{right_category_html}</div>
   </div>
 
@@ -1955,45 +1949,41 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
 
             map_html = f"""
             <style>
-              .region-map-shell {{position:relative;width:100%;aspect-ratio:2/1;min-height:280px;border-radius:22px;overflow:hidden;
+              .region-map-shell {{position:relative;width:100%;min-height:400px;border-radius:22px;overflow:hidden;
                 background:#0b1222;border:1px solid rgba(255,255,255,.08);box-shadow:0 20px 50px rgba(0,0,0,.25);
               }}
               .region-map-shell::before {{content:'';position:absolute;inset:0;
                 background-image:url('https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg');
-                background-size:contain;background-repeat:no-repeat;background-position:center center;
+                background-size:cover;background-repeat:no-repeat;background-position:center center;
                 opacity:.85;filter:invert(1) brightness(1.6);
               }}
               .region-map-shell .region-overlay {{position:relative;z-index:1;padding:16px;display:grid;grid-template-rows:auto 1fr;gap:12px;}}
-              .region-map-shell .region-header {{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:0 6px;}}
+              .region-map-shell .region-header {{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:0 6px;}}
               .region-map-shell .region-title {{font-size:14px;font-weight:700;color:#f8fafc;}}
               .region-map-shell .region-subtitle {{font-size:12px;color:rgba(248,250,252,.72);}}
               .region-map-shell .region-pin {{position:absolute;display:inline-flex;align-items:center;justify-content:center;
-                color:#facc15;font-size:16px;font-weight:800;white-space:nowrap;
-                text-shadow:0 1px 3px rgba(0,0,0,.9),0 0 6px rgba(0,0,0,.9);
+                width:62px;height:42px;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.92);
+                color:#0f172a;font-size:14px;font-weight:800;white-space:nowrap;
+                text-shadow:none;box-shadow:0 10px 30px rgba(0,0,0,.25);
                 transform:translate(-50%,-50%);
               }}
-              .region-map-shell .region-pin.zero {{opacity:.45;}}
+              .region-map-shell .region-pin::before {{content:'';position:absolute;inset:0;border-radius:999px;
+                background:radial-gradient(circle,rgba(250,204,21,.45) 0%,rgba(250,204,21,0) 70%);
+                z-index:-1;
+              }}
+              .region-map-shell .region-pin.zero {{opacity:.6;}}
               .region-map-shell .region-pin.india {{top:60%;left:66%;}}
               .region-map-shell .region-pin.usa {{top:36%;left:18%;}}
               .region-map-shell .region-pin.uk {{top:26%;left:30%;}}
               .region-map-shell .region-pin.germany {{top:30%;left:39%;}}
-              .region-map-shell .region-legend {{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}}
-              .region-map-shell .legend-item {{display:flex;align-items:center;gap:8px;font-size:12px;color:#f8fafc;}}
-              .region-map-shell .legend-dot {{width:10px;height:10px;border-radius:50%;background:#facc15;}}
             </style>
             <div class="region-map-shell">
               <div class="region-overlay">
                 <div class="region-header">
                   <div>
                     <div class="region-title">World Region Map</div>
-                    <div class="region-subtitle">Counts pinned to each region based on ideas</div>
+                    <div class="region-subtitle">Idea counts highlighted directly on each pinned region</div>
                   </div>
-                </div>
-                <div class="region-legend">
-                  <div class="legend-item"><span class="region-dot"></span> India: {region_counts['India']}</div>
-                  <div class="legend-item"><span class="region-dot"></span> USA: {region_counts['USA']}</div>
-                  <div class="legend-item"><span class="region-dot"></span> UK: {region_counts['UK']}</div>
-                  <div class="legend-item"><span class="region-dot"></span> Germany: {region_counts['Germany']}</div>
                 </div>
               </div>
               <div class="region-pin india{' zero' if region_counts['India']==0 else ''}" title="India: {region_counts['India']} idea(s)">{region_counts['India']}</div>
