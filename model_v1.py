@@ -50,10 +50,10 @@ BLOCKED_DOMAINS = {
 
 ROLE_PAGES = {
     "super user":         ["Dashboard","Submit Idea","PL Assignment","Feasibility","Approval","Admin","OTP List","Workflow","Deployed Tools"],
-    "normal user":        ["Submit Idea"],
-    "automation engineer":["Dashboard","Submit Idea","Feasibility","Deployed Tools"],
-    "automation pl":      ["Dashboard","Submit Idea","PL Assignment","Feasibility","Approval","Deployed Tools"],
-    "pl/spl":             ["Dashboard","Submit Idea","Approval","Deployed Tools"],
+    "normal user":        ["Submit Idea","Workflow"],
+    "automation engineer":["Dashboard","Submit Idea","Feasibility","Workflow","Deployed Tools"],
+    "automation pl":      ["Dashboard","Submit Idea","PL Assignment","Feasibility","Approval","Workflow","Deployed Tools"],
+    "pl/spl":             ["Dashboard","Submit Idea","Approval","Workflow","Deployed Tools"],
 }
 PW_ROLES = {"super user","automation engineer","automation pl","pl/spl"}
 
@@ -725,7 +725,14 @@ def check_login(email, password):
 def idea_hours(i):
     fd = i.get("feasibility_data",{}) or {}
     try:
-        return float(fd.get("manual",0) or 0)*float(fd.get("fte",0) or 0)*FREQ_MULT.get(fd.get("freq","Daily"),1)
+        # Prefer explicit baseline/new process times when available: savings per occurrence
+        baseline = float(fd.get("baseline_process_time", 0) or 0)
+        newp = float(fd.get("new_process_time", 0) or 0)
+        if baseline and baseline > newp:
+            per_occurrence_savings = baseline - newp
+        else:
+            per_occurrence_savings = float(fd.get("manual",0) or 0)
+        return per_occurrence_savings * float(fd.get("fte",0) or 0) * FREQ_MULT.get(fd.get("freq","Daily"),1)
     except: return 0
 
 def kpi_card(value, label, color, sub="", icon=""):
@@ -1449,22 +1456,39 @@ def page_feasibility():
             with st.form(f"feas_{idea['id']}"):
                 st.markdown("##### ROI Calculator")
                 col1,col2,col3 = st.columns(3)
-                with col1: manual = st.number_input("Manual Effort (hrs)", min_value=0.0, step=0.5, key=f"m_{idea['id']}")
-                with col2: fte    = st.number_input("FTE Count", min_value=0.0, step=0.1, key=f"f_{idea['id']}")
-                with col3: eng_ef = st.number_input("Automation Effort (hrs)", min_value=0.01, step=0.5, value=1.0, key=f"e_{idea['id']}")
+                with col1:
+                    baseline = st.number_input("Baseline Process Time (hrs)", min_value=0.0, step=0.1, key=f"b_{idea['id']}")
+                with col2:
+                    newp = st.number_input("New Process Time (hrs)", min_value=0.0, step=0.1, key=f"n_{idea['id']}")
+                with col3:
+                    fte    = st.number_input("FTE Count", min_value=0.0, step=0.1, key=f"f_{idea['id']}")
                 col4,col5 = st.columns(2)
-                with col4: freq     = st.selectbox("Frequency", list(FREQ_MULT.keys()), key=f"fr_{idea['id']}")
-                with col5: auto_cat = st.selectbox("Automation Category *", AUTO_CATS, key=f"ac_{idea['id']}")
+                with col4:
+                    eng_ef = st.number_input("Automation Effort (hrs)", min_value=0.01, step=0.5, value=1.0, key=f"e_{idea['id']}")
+                    freq     = st.selectbox("Frequency", list(FREQ_MULT.keys()), key=f"fr_{idea['id']}")
+                with col5:
+                    auto_cat = st.selectbox("Automation Category *", AUTO_CATS, key=f"ac_{idea['id']}")
                 comments = st.text_area("Comments / Observations", key=f"co_{idea['id']}")
-                roi = round((manual*fte*FREQ_MULT[freq])/eng_ef, 2)
-                st.info(f"📈 Computed ROI: **{roi}**")
+                # Compute per-occurrence savings: baseline - new process time
+                per_occurrence = 0.0
+                if baseline and baseline > newp:
+                    per_occurrence = baseline - newp
+                annual_saved = per_occurrence * fte * FREQ_MULT.get(freq, FREQ_MULT["Daily"])
+                roi = round((annual_saved / eng_ef) if eng_ef else 0.0, 2)
+                st.info(f"📈 Computed ROI: **{roi}**  —  Savings per occurrence: {per_occurrence} hrs  —  Annual saved hrs: {annual_saved:,.1f}")
                 if st.form_submit_button("✅ Submit Feasibility & Notify PL via Outlook"):
                     vsm_date = next_workday(date.today()+timedelta(days=1))
                     qi = compute_delivery(all_ideas, idea.get("assigned_engineer",""), {**idea,"roi":roi})
                     update_idea(idea["id"],{
                         "status":"WIP","roi":roi,"automation_category":auto_cat,
                         "feasibility_comments":comments,
-                        "feasibility_data":{"manual":manual,"fte":fte,"eng":eng_ef,"freq":freq},
+                        "feasibility_data":{
+                            "baseline_process_time":baseline,
+                            "new_process_time":newp,
+                            "fte":fte,
+                            "eng":eng_ef,
+                            "freq":freq
+                        },
                         "wip_date":datetime.now().strftime("%Y-%m-%d %H:%M"),
                         "vsm_meeting_date":fmt_d(vsm_date),
                         **({"priority_label":qi["priority_label"],
@@ -1508,7 +1532,18 @@ def page_approval():
                 st.markdown(f"**Category:** {idea.get('category','-')} / {idea.get('automation_category','-')}")
                 st.markdown(f"**Project:** {idea.get('project','-')}")
             with col2:
-                st.markdown(f"**Manual Effort:** {fd.get('manual','-')} hrs | **FTE:** {fd.get('fte','-')} | **Freq:** {fd.get('freq','-')}")
+                baseline = fd.get('baseline_process_time')
+                newp = fd.get('new_process_time')
+                if baseline is not None and newp is not None and baseline != "":
+                    try:
+                        bs = float(baseline)
+                        ns = float(newp or 0)
+                        savings = max(0.0, bs-ns)
+                        st.markdown(f"**Baseline:** {bs} hrs | **New:** {ns} hrs | **Savings/occurrence:** {savings} hrs")
+                    except:
+                        st.markdown(f"**Baseline:** {baseline} | **New:** {newp}")
+                else:
+                    st.markdown(f"**Manual Effort:** {fd.get('manual','-')} hrs | **FTE:** {fd.get('fte','-')} | **Freq:** {fd.get('freq','-')}")
                 st.markdown(f"**Automation Effort:** {fd.get('eng','-')} hrs")
                 st.markdown(f"**ROI:** {round(idea.get('roi',0),2)}")
             if idea.get("feasibility_comments"):
@@ -1591,9 +1626,10 @@ def page_dashboard():
                                placeholder="All regions", label_visibility="collapsed")
         st.caption("🌍 Region")
     with fc4:
-        st.write("")
-        if st.button("🔄 Reset", use_container_width=True):
-            for k in ["f_cat","f_pl","f_reg"]: st.session_state.pop(k,None)
+        st.markdown("<div style='height:36px;'></div>", unsafe_allow_html=True)
+        if st.button("🔄 Reset", use_container_width=True, key="reset_filters"):
+            for k in ["f_cat","f_pl","f_reg"]:
+                st.session_state[k] = []
             st.rerun()
         st.caption("Reset filters")
     with fc5:
@@ -1643,7 +1679,7 @@ def page_dashboard():
     completed_pct = round(completed / total * 100, 1) if total else 0.0
 
     # ── ROW 1: Premium Illustrated KPI Cards ───────────────────────────────
-    st.markdown("##### 📦 Key Metrics")
+    st.markdown("##### 📦 Total projected Hrs Saved / yr")
     auto_total_ideas = len([i for i in ideas if i.get("automation_category") in AUTOMATION_CATS])
     ai_total_ideas   = len([i for i in ideas if i.get("automation_category") in AI_CATS])
     proj_count       = len({i.get("project","") for i in ideas if i.get("project")})
@@ -1677,13 +1713,13 @@ def page_dashboard():
         <div class="km-copy">
           <div class="km-card"><div class="km-icon" style="color:#facc15;">{icon_total}</div><div class="km-text"><div class="km-header">Total Ideas</div><div class="km-card-body"><div class="km-value">{total}</div><div class="km-pct"></div></div><div class="km-footer"></div></div></div>
           <div class="km-card"><div class="km-icon" style="color:#059669;">{icon_completed}</div><div class="km-text"><div class="km-header">Completed</div><div class="km-card-body"><div class="km-value">{completed}</div><div class="km-pct"></div></div><div class="km-footer"></div></div></div>
-          <div class="km-card"><div class="km-icon" style="color:#0d9488;">{icon_hours}</div><div class="km-text"><div class="km-header">Total Hrs Saved / yr</div><div class="km-card-body"><div class="km-value">{cust_hrs+int_hrs:,.0f}</div><div class="km-pct"></div></div><div class="km-footer">Customer + Internal hours</div></div></div>
+          <div class="km-card"><div class="km-icon" style="color:#0d9488;">{icon_hours}</div><div class="km-text"><div class="km-header">Total Projected Hrs Saved / yr</div><div class="km-card-body"><div class="km-value">{cust_hrs+int_hrs:,.0f}</div><div class="km-pct"></div></div><div class="km-footer">Customer + Internal hours</div></div></div>
           <div class="km-card"><div class="km-icon" style="color:#b45309;">{icon_roi}</div><div class="km-text"><div class="km-header">Total ROI</div><div class="km-card-body"><div class="km-value">{cust_roi+int_roi}</div><div class="km-pct"></div></div><div class="km-footer">Customer + Internal ROI</div></div></div>
         </div>
         <div class="km-copy">
           <div class="km-card"><div class="km-icon" style="color:#facc15;">{icon_total}</div><div class="km-text"><div class="km-header">Total Ideas</div><div class="km-card-body"><div class="km-value">{total}</div><div class="km-pct"></div></div><div class="km-footer"></div></div></div>
           <div class="km-card"><div class="km-icon" style="color:#059669;">{icon_completed}</div><div class="km-text"><div class="km-header">Completed</div><div class="km-card-body"><div class="km-value">{completed}</div><div class="km-pct"></div></div><div class="km-footer"></div></div></div>
-          <div class="km-card"><div class="km-icon" style="color:#0d9488;">{icon_hours}</div><div class="km-text"><div class="km-header">Total Hrs Saved / yr</div><div class="km-card-body"><div class="km-value">{cust_hrs+int_hrs:,.0f}</div><div class="km-pct"></div></div><div class="km-footer">Customer + Internal hours</div></div></div>
+          <div class="km-card"><div class="km-icon" style="color:#0d9488;">{icon_hours}</div><div class="km-text"><div class="km-header">Total Hrs Projected Saved / yr</div><div class="km-card-body"><div class="km-value">{cust_hrs+int_hrs:,.0f}</div><div class="km-pct"></div></div><div class="km-footer">Customer + Internal hours</div></div></div>
           <div class="km-card"><div class="km-icon" style="color:#b45309;">{icon_roi}</div><div class="km-text"><div class="km-header">Total ROI</div><div class="km-card-body"><div class="km-value">{cust_roi+int_roi}</div><div class="km-pct"></div></div><div class="km-footer">Customer + Internal ROI</div></div></div>
         </div>
       </div>
@@ -2001,26 +2037,26 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
         }, height="220px")
 
     with ch3:
-        st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Hours Saved by Project</span>", unsafe_allow_html=True)
-        proj_hrs = {}
+        st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Ideas by Project</span>", unsafe_allow_html=True)
+        proj_counts = {}
         for i in ideas:
             proj = i.get("project","")
             if not proj:                  # skip only ideas missing a project
                 continue
-            h = idea_hours(i)             # 0 is a valid value — don't drop it
-            proj_hrs[proj] = proj_hrs.get(proj, 0) + h
-        if proj_hrs:
+            proj_counts[proj] = proj_counts.get(proj, 0) + 1
+        if proj_counts:
             st_echarts({
                 "tooltip":{"trigger":"axis"},
                 "grid":{"left":"3%","right":"4%","bottom":"28%","containLabel":True},
-                "xAxis":{"type":"category","data":list(proj_hrs.keys()),
+                "xAxis":{"type":"category","data":list(proj_counts.keys()),
                          "axisLabel":{"rotate":30,"fontSize":8,"interval":0}},
-                "yAxis":{"type":"value","name":"hrs/yr","nameTextStyle":{"fontSize":8}},
-                "series":[{"type":"bar","data":[round(v,1) for v in proj_hrs.values()],
-                           "itemStyle":{"color":"#7c3aed"},"barMaxWidth":32}]},
+                "yAxis":{"type":"value","name":"Ideas","nameTextStyle":{"fontSize":8}},
+                "series":[{"type":"bar","data":[v for v in proj_counts.values()],
+                           "itemStyle":{"color":"#7c3aed"},"barMaxWidth":32,
+                           "label":{"show":True,"position":"top","fontSize":9,"fontWeight":700,"color":"#ffffff"}}]},
                 height="220px")
         else:
-            st.caption("No projects with valid Hours Saved data yet.")
+            st.caption("No projects with valid idea count data yet.")
 
     # ── ROW 4: Ideation Tree + Region chart ──────────────────────────────
     tr_col, wl_col = st.columns([1.4, 1])
@@ -2133,10 +2169,10 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
               .region-map-shell {{position:relative;width:100%;aspect-ratio:2/1;max-height:420px;min-height:260px;border-radius:22px;overflow:hidden;
                 background:#0b1222;border:1px solid rgba(255,255,255,.08);box-shadow:0 20px 50px rgba(0,0,0,.25);
               }}
-              .region-map-shell::before {{content:'';position:absolute;inset:0;
-                background-image:url('https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg');
-                background-size:100% 100%;background-repeat:no-repeat;background-position:center center;
+              .region-map-shell .region-map-bg {{position:absolute;inset:0;
+                width:100%;height:100%;object-fit:cover;
                 opacity:.85;filter:invert(1) brightness(1.6);
+                z-index:0;
               }}
               .region-map-shell .region-overlay {{position:relative;z-index:1;padding:16px;display:grid;grid-template-rows:auto 1fr;gap:12px;}}
               .region-map-shell .region-header {{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:0 6px;}}
@@ -2144,7 +2180,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
               .region-map-shell .region-subtitle {{font-size:12px;color:rgba(248,250,252,.72);}}
               .region-map-shell .region-highlight {{position:absolute;border-radius:999px;transform:translate(-50%,-50%);
                 background:radial-gradient(circle,rgba(250,204,21,.55) 0%,rgba(250,204,21,.18) 55%,rgba(250,204,21,0) 75%);
-                animation:region-pulse 2.4s ease-in-out infinite;pointer-events:none;
+                animation:region-pulse 2.4s ease-in-out infinite;pointer-events:none;z-index:2;
               }}
               @keyframes region-pulse {{
                 0%,100% {{opacity:.75;}} 50% {{opacity:1;}}
@@ -2152,10 +2188,11 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
               .region-map-shell .region-pin {{position:absolute;transform:translate(-50%,-50%);
                 font-size:13px;font-weight:800;color:#facc15;
                 text-shadow:0 0 5px rgba(0,0,0,.95),0 0 2px rgba(0,0,0,.95);
-                pointer-events:none;
+                pointer-events:none;z-index:3;
               }}
             </style>
             <div class="region-map-shell">
+              <img class="region-map-bg" src="https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg" alt="World map" />
               <div class="region-overlay">
                 <div class="region-header">
                   <div>
@@ -2186,6 +2223,44 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
     rows = []
     for i in ideas:
         row = {c: i.get(c,"") for c in cols_show}
+        # feasibility data may contain baseline/new process times stored as JSON
+        fd = i.get("feasibility_data", {}) or {}
+        # extract baseline/new/fte/freq safely
+        try:
+            baseline = float(fd.get("baseline_process_time") or 0) if fd.get("baseline_process_time") not in (None, "") else None
+        except:
+            baseline = None
+        try:
+            newp = float(fd.get("new_process_time") or 0) if fd.get("new_process_time") not in (None, "") else None
+        except:
+            newp = None
+        try:
+            fte_val = float(fd.get("fte") or 0)
+        except:
+            fte_val = 0.0
+        freq_val = fd.get("freq","Daily")
+        # compute savings per occurrence and annual saved hours
+        if baseline is not None and newp is not None and baseline > newp:
+            savings_per_occ = baseline - newp
+        else:
+            # fallback to manual if baseline/new not provided
+            try:
+                savings_per_occ = float(fd.get("manual", 0) or 0)
+            except:
+                savings_per_occ = 0.0
+        annual_saved = savings_per_occ * fte_val * FREQ_MULT.get(freq_val, FREQ_MULT["Daily"])
+
+        row["Baseline (hrs)"] = baseline if baseline is not None else ""
+        row["New (hrs)"] = newp if newp is not None else ""
+        row["Savings/occ (hrs)"] = round(savings_per_occ, 2)
+        row["Annual Saved Hrs"] = round(annual_saved, 1)
+        # automation effort stored as 'eng' in feasibility_data
+        try:
+            auto_eff_raw = fd.get("eng", None)
+            auto_eff = float(auto_eff_raw) if auto_eff_raw not in (None, "") else None
+        except:
+            auto_eff = None
+        row["Automation Effort (hrs)"] = round(auto_eff, 1) if auto_eff is not None else ""
         row["Saving Hours"] = round(idea_hours(i), 1)
         row.update({c: i.get(c,"") for c in cols_show_tail})
         rows.append(row)
@@ -3218,12 +3293,13 @@ def main():
         )
 
         # Style sidebar buttons + theme dropdown with one constant background
-        # (scoped to the sidebar only — an unscoped selector here previously
-        # forced every button app-wide to plain black).
+        # (scoped to the sidebar only — ensures both Change Password and Logout match.)
         st.markdown("""
         <style>
-        [data-testid="stSidebar"] div.stButton > button {background-color:#000 !important; color:#fff !important; border: 1px solid #262626 !important; border-radius:6px !important; padding:6px 10px !important}
-        [data-testid="stSidebar"] div.stButton > button:hover {opacity:0.85}
+        [data-testid="stSidebar"] div.stButton > button {background-color:#000 !important; color:#fff !important; border: 1px solid #262626 !important; border-radius:6px !important; padding:6px 10px !important;}
+        [data-testid="stSidebar"] div.stButton > button:hover {opacity:0.85 !important;}
+        [data-testid="stSidebar"] div.stButton > button:first-of-type,
+        [data-testid="stSidebar"] div.stButton > button:nth-of-type(2) {background-color:#000 !important; color:#fff !important;}
         [data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] > div {background-color:#000 !important; color:#fff !important; border: 1px solid #262626 !important; border-radius:6px !important;}
         [data-testid="stSidebar"] [data-testid="stSelectbox"] svg {fill:#fff !important;}
         </style>
@@ -3246,9 +3322,6 @@ def main():
         if chosen != ss("theme"):
             st.session_state["theme"] = chosen; st.rerun()
 
-        st.divider()
-        render_session_countdown()
-
         st.markdown("---")
         st.markdown(
             f'<p style="font-size:10px;color:#64748b;">Queries?<br>'
@@ -3268,4 +3341,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
