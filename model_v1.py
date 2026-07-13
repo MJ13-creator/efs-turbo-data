@@ -1941,7 +1941,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
 
   <!-- RIGHT -->
   <div class="panel right">
-    <div class="ptitle" style="color:#38bdf8;text-shadow:0 0 18px #38bdf888;">-AI-</div>
+    <div class="ptitle" style="color:#38bdf8;text-shadow:0 0 18px #38bdf888;">-Artificial Intelligence-</div>
     <div class="category-grid">{right_category_html}</div>
   </div>
 
