@@ -2026,24 +2026,26 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
         }, height="220px")
 
     with ch3:
-     st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Ideas by Project</span>", unsafe_allow_html=True)
-    valid_proj = [i.get("project") for i in ideas if i.get("project")]
-    if valid_proj:
-        proj_counts = {p: valid_proj.count(p) for p in set(valid_proj)}
-        st_echarts({
-            "tooltip":{"trigger":"axis","axisPointer":{"type":"shadow"}},
-            "grid":{"left":"3%","right":"4%","bottom":"22%","containLabel":True},
-            "xAxis":{"type":"category","data":list(proj_counts.keys()),
-                     "axisLabel":{"rotate":30,"fontSize":8,"interval":0}},
-            "yAxis":{"type":"value","name":"Ideas","nameTextStyle":{"fontSize":8}},
-            "series":[{
-                "type":"bar","data":list(proj_counts.values()),
-                "itemStyle":{"color":"#7c3aed"},"barMaxWidth":34,"animationDuration":700,"animationEasing":"elasticOut",
-                "label":{"show":True,"position":"top","fontSize":9,"fontWeight":700,"color":"#333333"},
-            }]
-        }, height="220px")
-    else:
-        st.caption("No projects with valid idea count data yet.")
+        st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Ideas by Project</span>", unsafe_allow_html=True)
+        proj_counts = {}
+        for i in ideas:
+            proj = i.get("project","")
+            if not proj:                  # skip only ideas missing a project
+                continue
+            proj_counts[proj] = proj_counts.get(proj, 0) + 1
+        if proj_counts:
+            st_echarts({
+                "tooltip":{"trigger":"axis"},
+                "grid":{"left":"3%","right":"4%","bottom":"28%","containLabel":True},
+                "xAxis":{"type":"category","data":list(proj_counts.keys()),
+                         "axisLabel":{"rotate":30,"fontSize":8,"interval":0}},
+                "yAxis":{"type":"value","name":"Ideas","nameTextStyle":{"fontSize":8}},
+                "series":[{"type":"bar","data":[v for v in proj_counts.values()],
+                           "itemStyle":{"color":"#7c3aed"},"barMaxWidth":32,
+                           "label":{"show":True,"position":"top","fontSize":9,"fontWeight":700,"color":"#ffffff"}}]},
+                height="220px")
+        else:
+            st.caption("No projects with valid idea count data yet.")
 
     # ── ROW 4: Ideation Tree + Region chart ──────────────────────────────
     tr_col, wl_col = st.columns([1.4, 1])
