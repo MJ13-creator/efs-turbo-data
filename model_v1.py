@@ -1632,18 +1632,7 @@ def page_dashboard():
                 st.session_state[k] = []
             st.rerun()
         st.caption("Reset filters")
-    with fc5:
-        st.markdown(
-            f'<div style="background:linear-gradient(135deg,#1a4fad,#0ea5e9);'
-            f'border-radius:9px;padding:10px 9px;text-align:center;'
-            f'box-shadow:0 4px 20px rgba(26,79,173,.35);'>
-            f'<div style="display:flex;gap:9px;justify-content:center;align-items:center;">'
-            f'<div><div style="font-size:8px;color:rgba(255,255,255,.8);letter-spacing:.8px;'
-            f'text-transform:uppercase;font-weight:600;">&#128101; Registered</div>'
-            f'<div style="font-size:30px;font-weight:800;color:#fff;line-height:1.1;">{total_registered}</div></div>'
-            f'</div></div>',
-            unsafe_allow_html=True
-        )
+
 
     # Apply filters — interlinked (all three narrow the same set)
     ideas = all_ideas_raw
