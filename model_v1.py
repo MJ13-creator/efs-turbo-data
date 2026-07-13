@@ -2155,7 +2155,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
 
             map_html = f"""
             <style>
-              .region-map-shell {{position:relative;width:100%;aspect-ratio:2/1;max-height:420px;min-height:260px;border-radius:22px;overflow:hidden;
+              .region-map-shell {{position:relative;width:100%;aspect-ratio:2/1;max-height:420px;min-height:400px;border-radius:22px;overflow:hidden;
                 background:#0b1222;border:1px solid rgba(255,255,255,.08);box-shadow:0 20px 50px rgba(0,0,0,.25);
               }}
               .region-map-shell .region-map-bg {{position:absolute;inset:0;
@@ -2185,8 +2185,8 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
               <div class="region-overlay">
                 <div class="region-header">
                   <div>
-                    <div class="region-title">🌍 Ideas by Region</div>
-                    <div class="region-subtitle">Glow size = idea volume for that region</div>
+                    <div class="region-title"></div>
+                    <div class="region-subtitle"></div>
                   </div>
                 </div>
               </div>
