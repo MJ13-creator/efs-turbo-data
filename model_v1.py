@@ -2026,7 +2026,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
         }, height="220px")
 
     with ch3:
-    st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Ideas by Project</span>", unsafe_allow_html=True)
+     st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Ideas by Project</span>", unsafe_allow_html=True)
     valid_proj = [i.get("project") for i in ideas if i.get("project")]
     if valid_proj:
         proj_counts = {p: valid_proj.count(p) for p in set(valid_proj)}
