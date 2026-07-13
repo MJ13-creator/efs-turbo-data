@@ -2118,90 +2118,140 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
 
             no_region_count = len([i for i in ideas if not (i.get("region","") or "").strip()])
 
-            region_counts = {
-                "India": region_data.get("INDIA", {"count":0})["count"],
-                "USA": region_data.get("USA", {"count":0})["count"],
-                "UK": region_data.get("UK", {"count":0})["count"],
-                "Germany": region_data.get("GERMANY", {"count":0})["count"],
-            }
-            max_count = max(region_counts.values()) or 1
+            import streamlit as st
 
-            def _highlight_size(c):
-                # Glow ring scales with idea count so the busiest region is
-                # visually the most "highlighted" one on the map.
-                return 90 + round((c / max_count) * 70) if c else 60
+# 1. YOUR EXACT POSITION DICTIONARY
+REGION_POS = {
+    "India": {"top": "37.8%", "left": "71.9%"},  # lat 22.0, lon  79.0
+    "USA": {"top": "28.3%", "left": "22.8%"},  # lat 39.0, lon -98.0
+    "UK": {"top": "20.0%", "left": "49.4%"},  # lat 54.0, lon  -2.0
+    "Germany": {"top": "21.7%", "left": "52.8%"},  # lat 51.0, lon  10.0
+}
 
-            # Landmass position (top/left %) for each region's pin, computed
-            # from real lat/long centroids using an equirectangular projection:
-            #   left% = (lon + 180) / 360 * 100
-            #   top%  = (90  - lat) / 180 * 100
-            # This lines the pin up with the actual country on the map
-            # instead of a guessed pixel offset.
-            REGION_POS = {
-                "India":   {"top": "37.8%", "left": "71.9%"},   # lat 22.0, lon  79.0
-                "USA":     {"top": "28.3%", "left": "22.8%"},   # lat 39.0, lon -98.0
-                "UK":      {"top": "20.0%", "left": "49.4%"},   # lat 54.0, lon  -2.0
-                "Germany": {"top": "21.7%", "left": "52.8%"},   # lat 51.0, lon  10.0
-            }
-            active_regions = {k: v for k, v in region_counts.items() if v > 0}
+# Live data matching your regions
+active_regions = {"India": 12, "USA": 8, "UK": 4, "Germany": 3}
+no_region_count = 1
 
-            pins_html = "".join(
-                f'<div class="region-highlight" style="top:{REGION_POS[k]["top"]};left:{REGION_POS[k]["left"]};'
-                f'width:{_highlight_size(v)}px;height:{_highlight_size(v)}px;"></div>'
-                f'<div class="region-pin" style="top:{REGION_POS[k]["top"]};left:{REGION_POS[k]["left"]};" '
-                f'title="{k}: {v} idea(s)">{v}</div>'
-                for k, v in active_regions.items()
-            )
+# 2. GENERATE PIN MARKUP USING FIXED DICTIONARY VALUES
+pins_html = ""
+for name, count in active_regions.items():
+    if name in REGION_POS:
+        pos = REGION_POS[name]
+        top = pos["top"]
+        left = pos["left"]
 
-            map_html = f"""
-            <style>
-              .region-map-shell {{position:relative;width:100%;aspect-ratio:2/1;max-height:420px;min-height:400px;border-radius:22px;overflow:hidden;
-                background:#0b1222;border:1px solid rgba(255,255,255,.08);box-shadow:0 20px 50px rgba(0,0,0,.25);
-              }}
-              .region-map-shell .region-map-bg {{position:absolute;inset:0;
-                width:100%;height:100%;object-fit:cover;
-                opacity:.85;filter:invert(1) brightness(1.6);
-                z-index:0;
-              }}
-              .region-map-shell .region-overlay {{position:relative;z-index:1;padding:16px;display:grid;grid-template-rows:auto 1fr;gap:12px;}}
-              .region-map-shell .region-header {{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:0 6px;}}
-              .region-map-shell .region-title {{font-size:14px;font-weight:700;color:#f8fafc;}}
-              .region-map-shell .region-subtitle {{font-size:12px;color:rgba(248,250,252,.72);}}
-              .region-map-shell .region-highlight {{position:absolute;border-radius:999px;transform:translate(-50%,-50%);
-                background:radial-gradient(circle,rgba(250,204,21,.55) 0%,rgba(250,204,21,.18) 55%,rgba(250,204,21,0) 75%);
-                animation:region-pulse 2.4s ease-in-out infinite;pointer-events:none;z-index:2;
-              }}
-              @keyframes region-pulse {{
-                0%,100% {{opacity:.75;}} 50% {{opacity:1;}}
-              }}
-              .region-map-shell .region-pin {{position:absolute;transform:translate(-50%,-50%);
-                font-size:13px;font-weight:800;color:#facc15;
-                text-shadow:0 0 5px rgba(0,0,0,.95),0 0 2px rgba(0,0,0,.95);
-                pointer-events:none;z-index:3;
-              }}
-            </style>
-            <div class="region-map-shell">
-              <img class="region-map-bg" src="https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg" alt="World map" />
-              <div class="region-overlay">
-                <div class="region-header">
-                  <div>
-                    <div class="region-title"></div>
-                    <div class="region-subtitle"></div>
-                  </div>
-                </div>
-              </div>
-              {pins_html}
+        pins_html += f"""
+        <!-- Pulse animation layer -->
+        <div class="region-highlight" style="left: {left}; top: {top}; width: 80px; height: 80px;"></div>
+        <!-- Visual Pin/Label layer -->
+        <div class="region-pin" style="left: {left}; top: {top};">
+            📍 {name} ({count})
+        </div>
+        """
+
+# 3. CORE MAP MARKUP (Locked to exactly 400px height)
+map_html = f"""
+<style>
+    .region-map-shell {{
+        position: relative;
+        width: 100%;
+        height: 400px; /* Exact height request */
+        border-radius: 22px;
+        overflow: hidden;
+        background: #0b1222;
+        border: 1px solid rgba(255, 255, 255, .08);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, .25);
+    }}
+    .region-map-shell .region-map-bg {{
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: fill; /* Extends SVG directly to the 400px borders */
+        opacity: .85;
+        filter: invert(1) brightness(1.6);
+        z-index: 0;
+    }}
+    .region-map-shell .region-overlay {{
+        position: relative;
+        z-index: 1;
+        padding: 16px;
+        display: grid;
+        grid-template-rows: auto 1fr;
+        gap: 12px;
+    }}
+    .region-map-shell .region-header {{
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 0 6px;
+    }}
+    .region-map-shell .region-title {{
+        font-size: 14px;
+        font-weight: 700;
+        color: #f8fafc;
+    }}
+    .region-map-shell .region-subtitle {{
+        font-size: 12px;
+        color: rgba(248, 250, 252, .72);
+    }}
+    .region-map-shell .region-highlight {{
+        position: absolute;
+        border-radius: 999px;
+        transform: translate(-50%, -50%);
+        background: radial-gradient(circle, rgba(250, 204, 21, .55) 0%, rgba(250, 204, 21, .18) 55%, rgba(250, 204, 21, 0) 75%);
+        animation: region-pulse 2.4s ease-in-out infinite;
+        pointer-events: none;
+        z-index: 2;
+    }}
+    @keyframes region-pulse {{
+        0%, 100% {{ transform: translate(-50%, -50%) scale(0.7); opacity: .5; }}
+        50% {{ transform: translate(-50%, -50%) scale(1.2); opacity: 0.9; }}
+    }}
+    .region-map-shell .region-pin {{
+        position: absolute;
+        transform: translate(-50%, -50%);
+        font-size: 12px;
+        font-weight: 800;
+        color: #facc15;
+        text-shadow: 0 0 6px rgba(0, 0, 0, 0.95), 0 0 2px rgba(0, 0, 0, 0.95);
+        pointer-events: none;
+        z-index: 3;
+        white-space: nowrap;
+    }}
+</style>
+
+<div class="region-map-shell">
+    <img class="region-map-bg" src="https://wikimedia.org" alt="World map" />
+    <div class="region-overlay">
+        <div class="region-header">
+            <div>
+                <div class="region-title">Regional Overview</div>
+                <div class="region-subtitle">Fixed coordinate tracking map</div>
             </div>
-            """
-            st.markdown(map_html, unsafe_allow_html=True)
-            if active_regions:
-                st.caption(
-                    "📍 " + "  ·  ".join(f"**{k}**: {v} idea(s)" for k, v in active_regions.items())
-                )
-            else:
-                st.caption("No ideas with a region assigned yet.")
-            if no_region_count:
-                st.caption(f"ℹ️ {no_region_count} idea(s) have no region assigned and are excluded.")
+        </div>
+    </div>
+    {pins_html}
+</div>
+"""
+
+# 4. RENDER MODULES
+st.markdown(map_html, unsafe_allow_html=True)
+
+if active_regions:
+    caption_text = " 📍 " + " · ".join(
+        [f"**{k}**: {v} idea(s)" for k, v in active_regions.items()]
+    )
+    st.caption(caption_text)
+else:
+    st.caption("No ideas with a region assigned yet.")
+
+if no_region_count:
+    st.caption(
+        f"ℹ️ {no_region_count} idea(s) have no region assigned and are excluded."
+    )
+
     # ── All Ideas table + CSV (above Kanban) ────────────────────────────
     st.markdown("##### 📄 All Ideas")
     search = st.text_input("🔎 Search ideas", placeholder="Filter by name, project, status…")
