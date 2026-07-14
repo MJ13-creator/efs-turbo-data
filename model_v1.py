@@ -1702,14 +1702,14 @@ def page_dashboard():
         <div class="km-copy">
           <div class="km-card"><div class="km-icon" style="color:#facc15;">{icon_total}</div><div class="km-text"><div class="km-header">Total Ideas</div><div class="km-card-body"><div class="km-value">{total}</div><div class="km-pct"></div></div><div class="km-footer"></div></div></div>
           <div class="km-card"><div class="km-icon" style="color:#059669;">{icon_completed}</div><div class="km-text"><div class="km-header">Completed</div><div class="km-card-body"><div class="km-value">{completed}</div><div class="km-pct"></div></div><div class="km-footer"></div></div></div>
-          <div class="km-card"><div class="km-icon" style="color:#0d9488;">{icon_hours}</div><div class="km-text"><div class="km-header">Total Projected Hrs Saved / yr</div><div class="km-card-body"><div class="km-value">{cust_hrs+int_hrs:,.0f}</div><div class="km-pct"></div></div><div class="km-footer">Customer + Internal hours</div></div></div>
-          <div class="km-card"><div class="km-icon" style="color:#b45309;">{icon_roi}</div><div class="km-text"><div class="km-header">Total ROI</div><div class="km-card-body"><div class="km-value">{cust_roi+int_roi}</div><div class="km-pct"></div></div><div class="km-footer">Customer + Internal ROI</div></div></div>
+          <div class="km-card"><div class="km-icon" style="color:#0d9488;">{icon_hours}</div><div class="km-text"><div class="km-header">Total Projected Hrs Saved / yr</div><div class="km-card-body"><div class="km-value">{cust_hrs+int_hrs:,.0f}</div><div class="km-pct"></div></div><div class="km-footer"></div></div></div>
+          <div class="km-card"><div class="km-icon" style="color:#b45309;">{icon_roi}</div><div class="km-text"><div class="km-header">Total ROI</div><div class="km-card-body"><div class="km-value">{cust_roi+int_roi}</div><div class="km-pct"></div></div><div class="km-footer"></div></div></div>
         </div>
         <div class="km-copy">
           <div class="km-card"><div class="km-icon" style="color:#facc15;">{icon_total}</div><div class="km-text"><div class="km-header">Total Ideas</div><div class="km-card-body"><div class="km-value">{total}</div><div class="km-pct"></div></div><div class="km-footer"></div></div></div>
           <div class="km-card"><div class="km-icon" style="color:#059669;">{icon_completed}</div><div class="km-text"><div class="km-header">Completed</div><div class="km-card-body"><div class="km-value">{completed}</div><div class="km-pct"></div></div><div class="km-footer"></div></div></div>
-          <div class="km-card"><div class="km-icon" style="color:#0d9488;">{icon_hours}</div><div class="km-text"><div class="km-header">Total Hrs Projected Saved / yr</div><div class="km-card-body"><div class="km-value">{cust_hrs+int_hrs:,.0f}</div><div class="km-pct"></div></div><div class="km-footer">Customer + Internal hours</div></div></div>
-          <div class="km-card"><div class="km-icon" style="color:#b45309;">{icon_roi}</div><div class="km-text"><div class="km-header">Total ROI</div><div class="km-card-body"><div class="km-value">{cust_roi+int_roi}</div><div class="km-pct"></div></div><div class="km-footer">Customer + Internal ROI</div></div></div>
+          <div class="km-card"><div class="km-icon" style="color:#0d9488;">{icon_hours}</div><div class="km-text"><div class="km-header">Total Hrs Projected Saved / yr</div><div class="km-card-body"><div class="km-value">{cust_hrs+int_hrs:,.0f}</div><div class="km-pct"></div></div><div class="km-footer"></div></div></div>
+          <div class="km-card"><div class="km-icon" style="color:#b45309;">{icon_roi}</div><div class="km-text"><div class="km-header">Total ROI</div><div class="km-card-body"><div class="km-value">{cust_roi+int_roi}</div><div class="km-pct"></div></div><div class="km-footer"></div></div></div>
         </div>
       </div>
     </div>
@@ -1983,9 +1983,9 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
 </body></html>"""
     st.components.v1.html(_canvas_html, height=440, scrolling=False)
 
-    # ── ROW 3: Charts row (Status BAR chart + Customer pie + clean Hours/Project) ─
+    # ── ROW 3: Charts row (Status BAR chart + clean Hours/Project) ─
     st.markdown("##### 📈 Charts")
-    ch1, ch2, ch3 = st.columns(3)
+    ch1, ch3 = st.columns(2)
 
     with ch1:
         st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Ideas by Status</span>", unsafe_allow_html=True)
@@ -2003,26 +2003,6 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
                 "barMaxWidth":34,"animationDuration":700,"animationEasing":"elasticOut",
                 "label":{"show":True,"position":"top","fontSize":9,"fontWeight":700},
             }]
-        }, height="220px")
-
-    with ch2:
-        st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Customer — Count &amp; ROI</span>", unsafe_allow_html=True)
-        cust_data = {}
-        for i in ideas:
-            c = i.get("customer","") or "Unknown"
-            if c not in cust_data: cust_data[c] = {"count":0,"roi":0.0}
-            cust_data[c]["count"] += 1
-            cust_data[c]["roi"]   += float(i.get("roi",0) or 0)
-        cust_palette = ["#E30613","#00AEEF","#7c3aed","#059669","#0d9488","#b45309","#0369a1"]
-        c_pie_cnt = [{"value":v["count"],
-                      "name":f'{k}\n({round(v["roi"],1)} ROI)',
-                      "itemStyle":{"color":cust_palette[idx%len(cust_palette)]}}
-                     for idx,(k,v) in enumerate(cust_data.items())]
-        st_echarts({
-            "tooltip":{"trigger":"item","formatter":"{b}: {c} ideas ({d}%)"},
-            "series":[{"type":"pie","radius":["35%","65%"],"data":c_pie_cnt,
-                       "label":{"fontSize":9,"formatter":"{b}"},
-                       "labelLine":{"length":8,"length2":5}}]
         }, height="220px")
 
     with ch3:
@@ -2060,8 +2040,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
                              "borderRadius":5,"padding":[4,8],"position":"inside",
                              "align":"center","fontSize":10,"fontWeight":"bold"}
             for child in node.get("children",[]): add_label_boxes(child)
-        # Tree flow: Ideation → Triage/Feasibility(Queued) → Accepted → Customer → WIP / Deployed
-        #                                                              → Internal
+        # Tree flow: Ideation → Triage/Feasibility(Queued) → Accepted → WIP / Deployed
         #                                              → Rejected
         tree_data = {
             "name":f"Ideation ({total})","itemStyle":{"color":"#1a4fad"},
@@ -2070,16 +2049,8 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
                  "children":[
                      {"name":f"Accepted ({cnt('WIP')+cnt('UAT')+cnt('Completed')})","itemStyle":{"color":"#059669"},
                       "children":[
-                          {"name":f"Customer ({cust_cnt})","itemStyle":{"color":"#00498F"},
-                           "children":[
-                               {"name":f"WIP ({cs('Customer Requirement','WIP')+cs('Customer Requirement','UAT')})","itemStyle":{"color":"#0d9488"}},
-                               {"name":f"Deployed ({cs('Customer Requirement','Completed')})","itemStyle":{"color":"#059669"}},
-                           ]},
-                          {"name":f"Internal ({int_cnt})","itemStyle":{"color":"#0ea5e9"},
-                           "children":[
-                               {"name":f"WIP ({cs('Internal','WIP')+cs('Internal','UAT')})","itemStyle":{"color":"#0d9488"}},
-                               {"name":f"Deployed ({cs('Internal','Completed')})","itemStyle":{"color":"#059669"}},
-                           ]},
+                          {"name":f"WIP ({cnt('WIP')+cnt('UAT')})","itemStyle":{"color":"#0d9488"}},
+                          {"name":f"Deployed ({cnt('Completed')})","itemStyle":{"color":"#059669"}},
                       ]},
                      {"name":f"Rejected ({cnt('Rejected')})","itemStyle":{"color":"#dc2626"},
                       "children":[
