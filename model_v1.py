@@ -26,7 +26,7 @@ def get_supabase() -> Client:
 STATUSES   = ["New Idea","Assigned","WIP","UAT","Completed","Hold/Park","Rejected"]
 PROJECTS   = ["EFS CA-MRO","EFS BA-MRO","EFS BA-LCE","EFS CA-LCE","EFS Controls","EFS Technical Response","Others"]
 CATEGORIES = ["Customer Requirement","Internal"]
-AUTOMATION_CATS = ["Automation-Personal Productivity","Automation-Process Improvement","Automation-Defined Product and Sales","Automation-Quality Enhancement"]
+AUTOMATION_CATS = ["Automation-Personal Productivity","Automation-Process Improvement","Automation-Defined Product and Sales"]
 AI_CATS         = ["AI-Personal Productivity","AI-Process Improvement","AI-Defined Product and Sales"]
 AUTO_CATS  = AUTOMATION_CATS + AI_CATS   # kept for feasibility dropdown (flat list)
 FREQ_MULT  = {"Daily":260,"Weekly":52,"Monthly":12,"Yearly":1}
