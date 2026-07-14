@@ -835,7 +835,7 @@ CATEGORY_ICONS = {
     "Automation-Personal Productivity":     "⚙️",
     "Automation-Process Improvement":       "🔧",
     "Automation-Defined Product and Sales": "📦",
-    "Automation-Quality Enhancement":       "✅",
+     #"Automation-Quality Enhancement":       "✅",
     "AI-Personal Productivity":             "🧠",
     "AI-Process Improvement":               "🔄",
     "AI-Defined Product and Sales":         "📊",
