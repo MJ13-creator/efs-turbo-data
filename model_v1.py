@@ -1376,15 +1376,40 @@ def page_pl_assignment():
 
     # ── Engineer Workload & Sprint Schedule ───────────────────────────────
     st.divider()
-    st.markdown("#### 📅 Engineer Workload & Sprint Schedule")
-    st.caption("Active tasks per engineer ordered by auto-priority (Customer → ROI → FIFO), with rolling 2-week sprint dates.")
+    workload_head, load_head = st.columns([2, 1])
+
+    with workload_head:
+        st.markdown("#### 📅 Engineer Workload & Sprint Schedule")
+        st.caption("Active tasks per engineer ordered by auto-priority (Customer → ROI → FIFO), with rolling 2-week sprint dates.")
+
+    with load_head:
+        st.markdown("<span style='font-size:13px;font-weight:600;'>📊 Engineer Task Load</span>", unsafe_allow_html=True)
+
     all_eng = [u["email"] for u in users if u["role"]=="automation engineer"]
     if not all_eng:
         st.info("No automation engineers configured — add them in Admin.")
     else:
-        sel_engs = st.multiselect("Select Engineer(s) to view", all_eng,
-                                  default=None, placeholder="Choose one or more engineers…")
         import pandas as pd
+        load_rows = []
+        for eng in all_eng:
+            active = len([
+                i for i in all_ideas
+                if i.get("assigned_engineer") == eng
+                and i.get("status") in {"Assigned", "WIP", "UAT", "Hold/Park"}
+            ])
+            load_rows.append({
+                "Engineer": eng.split("@")[0].replace(".", " ").title(),
+                "Active Tasks": active,
+            })
+
+        chart_df = pd.DataFrame(load_rows)
+        if not chart_df.empty:
+            st.bar_chart(chart_df.set_index("Engineer")["Active Tasks"], use_container_width=True)
+
+        st.markdown("<div style='margin-top:4px; margin-bottom:8px; color:#64748b; font-size:12px;'>Select engineer(s) to view the sprint queue below.</div>", unsafe_allow_html=True)
+        sel_engs = st.multiselect("Select Engineer(s) to view", all_eng,
+                                  default=all_eng, placeholder="Choose one or more engineers…")
+
         for eng in (sel_engs or []):
             queue = engineer_queue(all_ideas, eng)
             with st.expander(f"👷 {eng}  —  {len(queue)} active task(s)", expanded=True):
