@@ -1296,30 +1296,7 @@ def page_pl_assignment():
     engineers = [u["email"] for u in users if u["role"]=="automation engineer"]
 
     # ── Engineer load bar chart — top right ──────────────────────────────
-    left_col, right_col = st.columns([2, 1])
-
-    with right_col:
-        st.markdown("<span style='font-size:13px;font-weight:600;'>📊 Engineer Task Load</span>", unsafe_allow_html=True)
-        if engineers:
-            import pandas as pd
-            load_rows = []
-            for eng in engineers:
-                active = len([
-                    i for i in all_ideas
-                    if i.get("assigned_engineer") == eng
-                    and i.get("status") in {"Assigned", "WIP", "UAT", "Hold/Park"}
-                ])
-                load_rows.append({
-                    "Engineer": eng.split("@")[0].replace(".", " ").title(),
-                    "Active Tasks": active,
-                })
-            chart_df = pd.DataFrame(load_rows)
-            if not chart_df.empty:
-                st.bar_chart(chart_df.set_index("Engineer")["Active Tasks"], use_container_width=True)
-            else:
-                st.info("No active task counts available.")
-        else:
-            st.info("No automation engineers configured.")
+    left_col,  = st.columns([2, 1])
 
     with left_col:
         st.caption("⭐ Auto-priority: **Customer Requirement → ROI (high first) → FIFO**")
