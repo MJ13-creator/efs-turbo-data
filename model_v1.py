@@ -1295,13 +1295,11 @@ def page_pl_assignment():
     users     = get_users()
     engineers = [u["email"] for u in users if u["role"]=="automation engineer"]
 
-    # ── Engineer load bar chart — top right ──────────────────────────────
     left_col, right_col = st.columns([2, 1])
 
     with right_col:
         st.markdown("<span style='font-size:13px;font-weight:600;'>📊 Engineer Task Load</span>", unsafe_allow_html=True)
         if engineers:
-            import pandas as pd
             load_rows = []
             for eng in engineers:
                 active = len([
@@ -1313,9 +1311,35 @@ def page_pl_assignment():
                     "Engineer": eng.split("@")[0].replace(".", " ").title(),
                     "Active Tasks": active,
                 })
-            chart_df = pd.DataFrame(load_rows)
-            if not chart_df.empty:
-                st.bar_chart(chart_df.set_index("Engineer")["Active Tasks"], use_container_width=True)
+            if load_rows:
+                chart_opt = {
+                    "tooltip": {"trigger": "axis"},
+                    "grid": {"left": "8%", "right": "6%", "top": "8%", "bottom": "18%", "containLabel": True},
+                    "xAxis": {
+                        "type": "category",
+                        "data": [r["Engineer"] for r in load_rows],
+                        "axisLabel": {"rotate": 45, "fontSize": 10},
+                    },
+                    "yAxis": {
+                        "type": "value",
+                        "min": 0,
+                        "splitLine": {"lineStyle": {"color": "#e5e7eb"}},
+                    },
+                    "series": [{
+                        "type": "bar",
+                        "barWidth": "42%",
+                        "data": [r["Active Tasks"] for r in load_rows],
+                        "itemStyle": {"color": "#2563eb"},
+                        "label": {
+                            "show": True,
+                            "position": "top",
+                            "formatter": "{c}",
+                            "color": "#111827",
+                            "fontSize": 11,
+                        },
+                    }]
+                }
+                st_echarts(chart_opt, height="340px", key="engineer_task_load_chart")
             else:
                 st.info("No active task counts available.")
         else:
@@ -1376,36 +1400,14 @@ def page_pl_assignment():
 
     # ── Engineer Workload & Sprint Schedule ───────────────────────────────
     st.divider()
-    workload_head, load_head = st.columns([2, 1])
-
-    with workload_head:
-        st.markdown("#### 📅 Engineer Workload & Sprint Schedule")
-        st.caption("Active tasks per engineer ordered by auto-priority (Customer → ROI → FIFO), with rolling 2-week sprint dates.")
-
-    with load_head:
-        st.markdown("<span style='font-size:13px;font-weight:600;'>📊 Engineer Task Load</span>", unsafe_allow_html=True)
+    st.markdown("#### 📅 Engineer Workload & Sprint Schedule")
+    st.caption("Active tasks per engineer ordered by auto-priority (Customer → ROI → FIFO), with rolling 2-week sprint dates.")
 
     all_eng = [u["email"] for u in users if u["role"]=="automation engineer"]
     if not all_eng:
         st.info("No automation engineers configured — add them in Admin.")
     else:
         import pandas as pd
-        load_rows = []
-        for eng in all_eng:
-            active = len([
-                i for i in all_ideas
-                if i.get("assigned_engineer") == eng
-                and i.get("status") in {"Assigned", "WIP", "UAT", "Hold/Park"}
-            ])
-            load_rows.append({
-                "Engineer": eng.split("@")[0].replace(".", " ").title(),
-                "Active Tasks": active,
-            })
-
-        chart_df = pd.DataFrame(load_rows)
-        if not chart_df.empty:
-            st.bar_chart(chart_df.set_index("Engineer")["Active Tasks"], use_container_width=True)
-
         st.markdown("<div style='margin-top:4px; margin-bottom:8px; color:#64748b; font-size:12px;'>Select engineer(s) to view the sprint queue below.</div>", unsafe_allow_html=True)
         sel_engs = st.multiselect("Select Engineer(s) to view", all_eng,
                                   default=all_eng, placeholder="Choose one or more engineers…")
