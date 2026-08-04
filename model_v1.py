@@ -1296,7 +1296,7 @@ def page_pl_assignment():
     engineers = [u["email"] for u in users if u["role"]=="automation engineer"]
 
     # ── Engineer load bar chart — top right ──────────────────────────────
-    left_col,  = st.columns([2, 1])
+    left_col  = st.columns([2, 1])
 
     with left_col:
         st.caption("⭐ Auto-priority: **Customer Requirement → ROI (high first) → FIFO**")
