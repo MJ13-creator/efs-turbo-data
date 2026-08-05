@@ -1588,6 +1588,28 @@ def page_approval():
 # ══════════════════════════════════════════════════════════════════════════════
 def page_dashboard():
     page_header("Dashboard ")
+    if "dashboard_page" not in st.session_state:
+        st.session_state.dashboard_page = 1
+
+    top_left, top_right = st.columns([6.5, 1.8])
+    with top_left:
+        st.markdown("### Dashboard")
+    with top_right:
+        if st.session_state.dashboard_page == 1:
+            if st.button("Page 2 →", key="nav_page_2", use_container_width=True):
+                st.session_state.dashboard_page = 2
+        elif st.session_state.dashboard_page == 2:
+            nav_cols = st.columns(2)
+            with nav_cols[0]:
+                if st.button("← Page 1", key="nav_page_1", use_container_width=True):
+                    st.session_state.dashboard_page = 1
+            with nav_cols[1]:
+                if st.button("Page 3 →", key="nav_page_3", use_container_width=True):
+                    st.session_state.dashboard_page = 3
+        else:
+            if st.button("← Page 2", key="nav_page_2_back", use_container_width=True):
+                st.session_state.dashboard_page = 2
+
     all_ideas_raw = get_all()
     if not all_ideas_raw:
         st.info("No ideas yet.")
@@ -1616,27 +1638,35 @@ def page_dashboard():
     all_regs = sorted({i.get("region","")   for i in all_ideas_raw if i.get("region","")})
     all_cats = CATEGORIES
 
-    fc1, fc2, fc3, fc4, fc5 = st.columns([1.0, 1.0, 1.0, 0.45, 0.6])
-    with fc1:
-        f_cat = st.multiselect("Category", all_cats, key="f_cat",
-                               placeholder="All categories", label_visibility="collapsed")
-        st.caption("🗂 Category")
-    with fc2:
-        f_pl  = st.multiselect("PL/SPL", all_pls, key="f_pl",
-                               placeholder="All PLs", label_visibility="collapsed")
-        st.caption("🧑‍💼 PL / SPL")
-    with fc3:
-        f_reg = st.multiselect("Region", all_regs, key="f_reg",
-                               placeholder="All regions", label_visibility="collapsed")
-        st.caption("🌍 Region")
-    with fc4:
-        st.markdown("<div style='height:36px;'></div>", unsafe_allow_html=True)
-        if st.button("🔄 Reset", use_container_width=True, key="reset_filters"):
-            for k in ["f_cat","f_pl","f_reg"]:
-                st.session_state[k] = []
-            st.rerun()
-        st.caption("Reset filters")
+    for k in ["f_cat", "f_pl", "f_reg"]:
+        if k not in st.session_state:
+            st.session_state[k] = []
 
+    f_cat = st.session_state.get("f_cat", [])
+    f_pl  = st.session_state.get("f_pl", [])
+    f_reg = st.session_state.get("f_reg", [])
+
+    if st.session_state.dashboard_page == 1:
+        fc1, fc2, fc3, fc4 = st.columns([1.0, 1.0, 1.0, 0.45])
+        with fc1:
+            f_cat = st.multiselect("Category", all_cats, key="f_cat",
+                                   placeholder="All categories", label_visibility="collapsed")
+            st.caption("🗂 Category")
+        with fc2:
+            f_pl  = st.multiselect("PL/SPL", all_pls, key="f_pl",
+                                   placeholder="All PLs", label_visibility="collapsed")
+            st.caption("🧑‍💼 PL / SPL")
+        with fc3:
+            f_reg = st.multiselect("Region", all_regs, key="f_reg",
+                                   placeholder="All regions", label_visibility="collapsed")
+            st.caption("🌍 Region")
+        with fc4:
+            st.markdown("<div style='height:36px;'></div>", unsafe_allow_html=True)
+            if st.button("🔄 Reset", use_container_width=True, key="reset_filters"):
+                for k in ["f_cat", "f_pl", "f_reg"]:
+                    st.session_state[k] = []
+                st.rerun()
+            st.caption("Reset filters")
 
     # Apply filters — interlinked (all three narrow the same set)
     ideas = all_ideas_raw
@@ -1671,8 +1701,9 @@ def page_dashboard():
     completed = cnt("Completed")
     completed_pct = round(completed / total * 100, 1) if total else 0.0
 
-    # ── ROW 1: Premium Illustrated KPI Cards ───────────────────────────────
-    st.markdown("##### 📦 Total projected Hrs Saved / yr")
+    # ── PAGE 1: Overview metrics + category canvas ─────────────────────────
+    if st.session_state.dashboard_page == 1:
+        st.markdown("##### 📦 Total projected Hrs Saved / yr")
     auto_total_ideas = len([i for i in ideas if i.get("automation_category") in AUTOMATION_CATS])
     ai_total_ideas   = len([i for i in ideas if i.get("automation_category") in AI_CATS])
     proj_count       = len({i.get("project","") for i in ideas if i.get("project")})
@@ -1987,125 +2018,167 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
 </body></html>"""
     st.components.v1.html(_canvas_html, height=440, scrolling=False)
 
-    # ── ROW 3: Charts row (Status BAR chart + Customer pie + clean Hours/Project) ─
-    st.markdown("##### 📈 Charts")
-    ch1, ch2, ch3 = st.columns(3)
+    elif st.session_state.dashboard_page == 2:
+        st.markdown("##### 📈 Charts")
+        ch1, ch2 = st.columns([1, 1.1])
 
-    with ch1:
-        st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Ideas by Status</span>", unsafe_allow_html=True)
-        status_labels = [s for s in STATUSES]
-        status_vals   = [cnt(s) for s in STATUSES]
-        status_cols   = [STATUS_COLORS.get(s,"#888") for s in STATUSES]
-        st_echarts({
-            "tooltip":{"trigger":"axis","axisPointer":{"type":"shadow"}},
-            "grid":{"left":"3%","right":"4%","bottom":"22%","containLabel":True},
-            "xAxis":{"type":"category","data":status_labels,
-                     "axisLabel":{"rotate":30,"fontSize":8,"interval":0}},
-            "yAxis":{"type":"value","name":"Ideas","nameTextStyle":{"fontSize":8}},
-            "series":[{
-                "type":"bar","data":[{"value":v,"itemStyle":{"color":c}} for v,c in zip(status_vals,status_cols)],
-                "barMaxWidth":34,"animationDuration":700,"animationEasing":"elasticOut",
-                "label":{"show":True,"position":"top","fontSize":9,"fontWeight":700},
-            }]
-        }, height="220px")
-
-    with ch2:
-        st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Customer — Count &amp; ROI</span>", unsafe_allow_html=True)
-        cust_data = {}
-        for i in ideas:
-            c = i.get("customer","") or "Unknown"
-            if c not in cust_data: cust_data[c] = {"count":0,"roi":0.0}
-            cust_data[c]["count"] += 1
-            cust_data[c]["roi"]   += float(i.get("roi",0) or 0)
-        cust_palette = ["#E30613","#00AEEF","#7c3aed","#059669","#0d9488","#b45309","#0369a1"]
-        c_pie_cnt = [{"value":v["count"],
-                      "name":f'{k}\n({round(v["roi"],1)} ROI)',
-                      "itemStyle":{"color":cust_palette[idx%len(cust_palette)]}}
-                     for idx,(k,v) in enumerate(cust_data.items())]
-        st_echarts({
-            "tooltip":{"trigger":"item","formatter":"{b}: {c} ideas ({d}%)"},
-            "series":[{"type":"pie","radius":["35%","65%"],"data":c_pie_cnt,
-                       "label":{"fontSize":9,"formatter":"{b}"},
-                       "labelLine":{"length":8,"length2":5}}]
-        }, height="220px")
-
-    with ch3:
-        st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Ideas by Project</span>", unsafe_allow_html=True)
-        proj_counts = {}
-        for i in ideas:
-            proj = i.get("project","")
-            if not proj:                  # skip only ideas missing a project
-                continue
-            proj_counts[proj] = proj_counts.get(proj, 0) + 1
-        if proj_counts:
+        with ch1:
+            st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Ideas by Status</span>", unsafe_allow_html=True)
+            status_labels = [s for s in STATUSES]
+            status_vals   = [cnt(s) for s in STATUSES]
+            status_cols   = [STATUS_COLORS.get(s, "#888") for s in STATUSES]
             st_echarts({
-                "tooltip":{"trigger":"axis"},
-                "grid":{"left":"3%","right":"4%","bottom":"28%","containLabel":True},
-                "xAxis":{"type":"category","data":list(proj_counts.keys()),
-                         "axisLabel":{"rotate":30,"fontSize":8,"interval":0}},
-                "yAxis":{"type":"value","name":"Ideas","nameTextStyle":{"fontSize":8}},
-                "series":[{"type":"bar","data":[v for v in proj_counts.values()],
-                           "itemStyle":{"color":"#7c3aed"},"barMaxWidth":32,
-                           "label":{"show":True,"position":"top","fontSize":9,"fontWeight":700,"color":"#ffffff"}}]},
-                height="220px")
-        else:
-            st.caption("No projects with valid idea count data yet.")
+                "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"},
+                "legend": {"bottom": 0, "textStyle": {"fontSize": 9}},
+                "series": [{
+                    "type": "pie",
+                    "radius": ["35%", "72%"],
+                    "center": ["50%", "42%"],
+                    "data": [{"value": v, "name": l, "itemStyle": {"color": c}} for v, l, c in zip(status_vals, status_labels, status_cols)],
+                    "label": {"fontSize": 9, "formatter": "{b}"},
+                    "labelLine": {"length": 5, "length2": 3},
+                }]
+            }, height="320px")
 
-    # ── ROW 4: Ideation Tree + Region chart ──────────────────────────────
-    tr_col, wl_col = st.columns([1.4, 1])
+        with ch2:
+            st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Project → Customer Hierarchy</span>", unsafe_allow_html=True)
+            project_customer_map = {}
+            for i in ideas:
+                project = i.get("project", "") or "Others"
+                customer = i.get("customer", "") or "Unknown"
+                project_customer_map.setdefault(project, {}).setdefault(customer, 0)
+                project_customer_map[project][customer] += 1
+            h_nodes = []
+            for project, customers in project_customer_map.items():
+                children = [{"name": f"{customer} ({count})", "value": count} for customer, count in customers.items()]
+                h_nodes.append({"name": f"{project} ({sum(customers.values())})", "children": children})
+            st_echarts({
+                "tooltip": {"trigger": "item"},
+                "series": [{
+                    "type": "sunburst",
+                    "data": h_nodes or [{"name": "No data", "value": 1}],
+                    "radius": ["10%", "75%"],
+                    "label": {"fontSize": 9, "color": "#ffffff"},
+                    "emphasis": {"focus": "ancestor"},
+                    "itemStyle": {"borderWidth": 1, "borderColor": "#0f172a"},
+                }]
+            }, height="320px")
 
-    with tr_col:
-        st.markdown("##### 🌳 Ideation Workflow Tree")
-        def cs(cat,st_): return len([i for i in ideas if i.get("category")==cat and i.get("status")==st_])
-        def rs(r): return len([i for i in ideas if i.get("status")=="Rejected" and i.get("rejection_reason")==r])
-        def add_label_boxes(node):
-            color = node.get("itemStyle",{}).get("color","#FFFFFF")
-            node["label"] = {"show":True,"backgroundColor":color,"color":"#FFFFFF",
-                             "borderRadius":5,"padding":[4,8],"position":"inside",
-                             "align":"center","fontSize":10,"fontWeight":"bold"}
-            for child in node.get("children",[]): add_label_boxes(child)
-        # Tree flow: Ideation → Triage/Feasibility(Queued) → Accepted → Customer → WIP / Deployed
-        #                                                              → Internal
-        #                                              → Rejected
-        tree_data = {
-            "name":f"Ideation ({total})","itemStyle":{"color":"#1a4fad"},
-            "children":[
-                {"name":f"Triage / Feasibility Study\n(Queued: {cnt('Assigned')})","itemStyle":{"color":"#1a4fad"},
-                 "children":[
-                     {"name":f"Accepted ({cnt('WIP')+cnt('UAT')+cnt('Completed')})","itemStyle":{"color":"#059669"},
-                      "children":[
-                          {"name":f"Customer ({cust_cnt})","itemStyle":{"color":"#00498F"},
-                           "children":[
-                               {"name":f"WIP ({cs('Customer Requirement','WIP')+cs('Customer Requirement','UAT')})","itemStyle":{"color":"#0d9488"}},
-                               {"name":f"Deployed ({cs('Customer Requirement','Completed')})","itemStyle":{"color":"#059669"}},
-                           ]},
-                          {"name":f"Internal ({int_cnt})","itemStyle":{"color":"#0ea5e9"},
-                           "children":[
-                               {"name":f"WIP ({cs('Internal','WIP')+cs('Internal','UAT')})","itemStyle":{"color":"#0d9488"}},
-                               {"name":f"Deployed ({cs('Internal','Completed')})","itemStyle":{"color":"#059669"}},
-                           ]},
-                      ]},
-                     {"name":f"Rejected ({cnt('Rejected')})","itemStyle":{"color":"#dc2626"},
-                      "children":[
-                          {"name":f"Technical ({rs('Technical Rejection')})","itemStyle":{"color":"#ef4444"}},
-                          {"name":f"Business ({rs('Business Rejection')})","itemStyle":{"color":"#f97316"}},
-                      ]},
-                 ]},
-            ]
+        st.markdown("##### 🌍 Region — World Map")
+        region_data = {}
+        for i in ideas:
+            r = (i.get("region","") or "").strip()
+            if not r:
+                continue
+            key = r.upper()
+            if key not in region_data:
+                region_data[key] = {"count":0,"roi":0.0}
+            region_data[key]["count"] += 1
+            region_data[key]["roi"] += float(i.get("roi",0) or 0)
+
+        no_region_count = len([i for i in ideas if not (i.get("region","") or "").strip()])
+        region_counts = {
+            "India": region_data.get("INDIA", {"count":0})["count"],
+            "USA": region_data.get("USA", {"count":0})["count"],
+            "UK": region_data.get("UK", {"count":0})["count"],
+            "Germany": region_data.get("GERMANY", {"count":0})["count"],
         }
-        add_label_boxes(tree_data)
-        st_echarts({
-            "backgroundColor":"#0B0B0D",
-            "tooltip":{"trigger":"item","triggerOn":"mousemove"},
-            "series":[{"type":"tree","data":[tree_data],
-                       "top":"5%","left":"7%","bottom":"5%","right":"15%",
-                       "symbol":"rect","symbolSize":1,
-                       "lineStyle":{"color":"#f97316","width":2},
-                       "label":{"position":"left","verticalAlign":"middle","align":"right","fontSize":10},
-                       "leaves":{"label":{"position":"right","verticalAlign":"middle","align":"left","fontSize":9}},
-                       "emphasis":{"focus":"descendant"},
-                       "expandAndCollapse":True,"animationDuration":550,"initialTreeDepth":2}]
-        }, height="400px")
+        max_count = max(region_counts.values()) or 1
+
+        def _highlight_size(c):
+            return 90 + round((c / max_count) * 70) if c else 60
+
+        REGION_POS = {
+            "India": {"top": "37.8%", "left": "71.9%"},
+            "USA": {"top": "28.3%", "left": "22.8%"},
+            "UK": {"top": "20.0%", "left": "49.4%"},
+            "Germany": {"top": "21.7%", "left": "52.8%"},
+        }
+        active_regions = {k: v for k, v in region_counts.items() if v > 0}
+        pins_html = "".join(
+            f'<div class="region-highlight" style="top:{REGION_POS[k]["top"]};left:{REGION_POS[k]["left"]};width:{_highlight_size(v)}px;height:{_highlight_size(v)}px;"></div>'
+            f'<div class="region-pin" style="top:{REGION_POS[k]["top"]};left:{REGION_POS[k]["left"]};" title="{k}: {v} idea(s)">{v}</div>'
+            for k, v in active_regions.items()
+        )
+
+        map_html = f"""
+        <style>
+          .region-map-shell {{position:relative;width:100%;aspect-ratio:2/1;max-height:420px;min-height:300px;border-radius:22px;overflow:hidden;background:#0b1222;border:1px solid rgba(255,255,255,.08);box-shadow:0 20px 50px rgba(0,0,0,.25);}}
+          .region-map-shell .region-map-bg {{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.85;filter:invert(1) brightness(1.6);z-index:0;}}
+          .region-map-shell .region-overlay {{position:relative;z-index:1;padding:16px;display:grid;grid-template-rows:auto 1fr;gap:12px;}}
+          .region-map-shell .region-header {{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:0 6px;}}
+          .region-map-shell .region-title {{font-size:14px;font-weight:700;color:#f8fafc;}}
+          .region-map-shell .region-subtitle {{font-size:12px;color:rgba(248,250,252,.72);}}
+          .region-map-shell .region-highlight {{position:absolute;border-radius:999px;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(250,204,21,.55) 0%,rgba(250,204,21,.18) 55%,rgba(250,204,21,0) 75%);animation:region-pulse 2.4s ease-in-out infinite;pointer-events:none;z-index:2;}}
+          @keyframes region-pulse {{0%,100% {{opacity:.75;}} 50% {{opacity:1;}}}}
+          .region-map-shell .region-pin {{position:absolute;transform:translate(-50%,-50%);font-size:13px;font-weight:800;color:#facc15;text-shadow:0 0 5px rgba(0,0,0,.95),0 0 2px rgba(0,0,0,.95);pointer-events:none;z-index:3;}}
+        </style>
+        <div class="region-map-shell">
+          <img class="region-map-bg" src="https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg" alt="World map" />
+          <div class="region-overlay"><div class="region-header"><div><div class="region-title"></div><div class="region-subtitle"></div></div></div></div>
+          {pins_html}
+        </div>
+        """
+        st.markdown(map_html, unsafe_allow_html=True)
+        if active_regions:
+            st.caption("📍 " + "  ·  ".join(f"**{k}**: {v} idea(s)" for k, v in active_regions.items()))
+        else:
+            st.caption("No ideas with a region assigned yet.")
+        if no_region_count:
+            st.caption(f"ℹ️ {no_region_count} idea(s) have no region assigned and are excluded.")
+
+        # ── ROW 4: Ideation Tree + Region chart ──────────────────────────────
+        tr_col, wl_col = st.columns([1.4, 1])
+
+        with tr_col:
+            st.markdown("##### 🌳 Ideation Workflow Tree")
+            def cs(cat,st_): return len([i for i in ideas if i.get("category")==cat and i.get("status")==st_])
+            def rs(r): return len([i for i in ideas if i.get("status")=="Rejected" and i.get("rejection_reason")==r])
+            def add_label_boxes(node):
+                color = node.get("itemStyle",{}).get("color","#FFFFFF")
+                node["label"] = {"show":True,"backgroundColor":color,"color":"#FFFFFF",
+                                 "borderRadius":5,"padding":[4,8],"position":"inside",
+                                 "align":"center","fontSize":10,"fontWeight":"bold"}
+                for child in node.get("children",[]): add_label_boxes(child)
+            tree_data = {
+                "name":f"Ideation ({total})","itemStyle":{"color":"#1a4fad"},
+                "children":[
+                    {"name":f"Triage / Feasibility Study\n(Queued: {cnt('Assigned')})","itemStyle":{"color":"#1a4fad"},
+                     "children":[
+                         {"name":f"Accepted ({cnt('WIP')+cnt('UAT')+cnt('Completed')})","itemStyle":{"color":"#059669"},
+                          "children":[
+                              {"name":f"Customer ({cust_cnt})","itemStyle":{"color":"#00498F"},
+                               "children":[
+                                   {"name":f"WIP ({cs('Customer Requirement','WIP')+cs('Customer Requirement','UAT')})","itemStyle":{"color":"#0d9488"}},
+                                   {"name":f"Deployed ({cs('Customer Requirement','Completed')})","itemStyle":{"color":"#059669"}},
+                               ]},
+                              {"name":f"Internal ({int_cnt})","itemStyle":{"color":"#0ea5e9"},
+                               "children":[
+                                   {"name":f"WIP ({cs('Internal','WIP')+cs('Internal','UAT')})","itemStyle":{"color":"#0d9488"}},
+                                   {"name":f"Deployed ({cs('Internal','Completed')})","itemStyle":{"color":"#059669"}},
+                               ]},
+                          ]},
+                         {"name":f"Rejected ({cnt('Rejected')})","itemStyle":{"color":"#dc2626"},
+                          "children":[
+                              {"name":f"Technical ({rs('Technical Rejection')})","itemStyle":{"color":"#ef4444"}},
+                              {"name":f"Business ({rs('Business Rejection')})","itemStyle":{"color":"#f97316"}},
+                          ]},
+                     ]},
+                ]
+            }
+            add_label_boxes(tree_data)
+            st_echarts({
+                "backgroundColor":"#0B0B0D",
+                "tooltip":{"trigger":"item","triggerOn":"mousemove"},
+                "series":[{"type":"tree","data":[tree_data],
+                           "top":"5%","left":"7%","bottom":"5%","right":"15%",
+                           "symbol":"rect","symbolSize":1,
+                           "lineStyle":{"color":"#f97316","width":2},
+                           "label":{"position":"left","verticalAlign":"middle","align":"right","fontSize":10},
+                           "leaves":{"label":{"position":"right","verticalAlign":"middle","align":"left","fontSize":9}},
+                           "emphasis":{"focus":"descendant"},
+                           "expandAndCollapse":True,"animationDuration":550,"initialTreeDepth":2}]
+            }, height="400px")
 
         with wl_col:
             st.markdown("##### 🌍 Region — World Map")
@@ -2113,7 +2186,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
             for i in ideas:
                 r = (i.get("region","") or "").strip()
                 if not r:
-                    continue   # skip ideas with no region set
+                    continue
                 key = r.upper()
                 if key not in region_data:
                     region_data[key] = {"count":0,"roi":0.0}
@@ -2121,7 +2194,6 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
                 region_data[key]["roi"]   += float(i.get("roi",0) or 0)
 
             no_region_count = len([i for i in ideas if not (i.get("region","") or "").strip()])
-
             region_counts = {
                 "India": region_data.get("INDIA", {"count":0})["count"],
                 "USA": region_data.get("USA", {"count":0})["count"],
@@ -2131,21 +2203,13 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
             max_count = max(region_counts.values()) or 1
 
             def _highlight_size(c):
-                # Glow ring scales with idea count so the busiest region is
-                # visually the most "highlighted" one on the map.
                 return 90 + round((c / max_count) * 70) if c else 60
 
-            # Landmass position (top/left %) for each region's pin, computed
-            # from real lat/long centroids using an equirectangular projection:
-            #   left% = (lon + 180) / 360 * 100
-            #   top%  = (90  - lat) / 180 * 100
-            # This lines the pin up with the actual country on the map
-            # instead of a guessed pixel offset.
             REGION_POS = {
-                "India":   {"top": "37.8%", "left": "71.9%"},   # lat 22.0, lon  79.0
-                "USA":     {"top": "28.3%", "left": "22.8%"},   # lat 39.0, lon -98.0
-                "UK":      {"top": "20.0%", "left": "49.4%"},   # lat 54.0, lon  -2.0
-                "Germany": {"top": "21.7%", "left": "52.8%"},   # lat 51.0, lon  10.0
+                "India":   {"top": "37.8%", "left": "71.9%"},
+                "USA":     {"top": "28.3%", "left": "22.8%"},
+                "UK":      {"top": "20.0%", "left": "49.4%"},
+                "Germany": {"top": "21.7%", "left": "52.8%"},
             }
             active_regions = {k: v for k, v in region_counts.items() if v > 0}
 
@@ -2159,116 +2223,88 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
 
             map_html = f"""
             <style>
-              .region-map-shell {{position:relative;width:100%;aspect-ratio:2/1;max-height:420px;min-height:px;border-radius:22px;overflow:hidden;
-                background:#0b1222;border:1px solid rgba(255,255,255,.08);box-shadow:0 20px 50px rgba(0,0,0,.25);
-              }}
-              .region-map-shell .region-map-bg {{position:absolute;inset:0;
-                width:100%;height:100%;object-fit:cover;
-                opacity:.85;filter:invert(1) brightness(1.6);
-                z-index:0;
-              }}
+              .region-map-shell {{position:relative;width:100%;aspect-ratio:2/1;max-height:420px;min-height:300px;border-radius:22px;overflow:hidden;background:#0b1222;border:1px solid rgba(255,255,255,.08);box-shadow:0 20px 50px rgba(0,0,0,.25);}}
+              .region-map-shell .region-map-bg {{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.85;filter:invert(1) brightness(1.6);z-index:0;}}
               .region-map-shell .region-overlay {{position:relative;z-index:1;padding:16px;display:grid;grid-template-rows:auto 1fr;gap:12px;}}
               .region-map-shell .region-header {{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:0 6px;}}
               .region-map-shell .region-title {{font-size:14px;font-weight:700;color:#f8fafc;}}
               .region-map-shell .region-subtitle {{font-size:12px;color:rgba(248,250,252,.72);}}
-              .region-map-shell .region-highlight {{position:absolute;border-radius:999px;transform:translate(-50%,-50%);
-                background:radial-gradient(circle,rgba(250,204,21,.55) 0%,rgba(250,204,21,.18) 55%,rgba(250,204,21,0) 75%);
-                animation:region-pulse 2.4s ease-in-out infinite;pointer-events:none;z-index:2;
-              }}
-              @keyframes region-pulse {{
-                0%,100% {{opacity:.75;}} 50% {{opacity:1;}}
-              }}
-              .region-map-shell .region-pin {{position:absolute;transform:translate(-50%,-50%);
-                font-size:13px;font-weight:800;color:#facc15;
-                text-shadow:0 0 5px rgba(0,0,0,.95),0 0 2px rgba(0,0,0,.95);
-                pointer-events:none;z-index:3;
-              }}
+              .region-map-shell .region-highlight {{position:absolute;border-radius:999px;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(250,204,21,.55) 0%,rgba(250,204,21,.18) 55%,rgba(250,204,21,0) 75%);animation:region-pulse 2.4s ease-in-out infinite;pointer-events:none;z-index:2;}}
+              @keyframes region-pulse {{0%,100% {{opacity:.75;}} 50% {{opacity:1;}}}}
+              .region-map-shell .region-pin {{position:absolute;transform:translate(-50%,-50%);font-size:13px;font-weight:800;color:#facc15;text-shadow:0 0 5px rgba(0,0,0,.95),0 0 2px rgba(0,0,0,.95);pointer-events:none;z-index:3;}}
             </style>
             <div class="region-map-shell">
               <img class="region-map-bg" src="https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg" alt="World map" />
-              <div class="region-overlay">
-                <div class="region-header">
-                  <div>
-                    <div class="region-title"></div>
-                    <div class="region-subtitle"></div>
-                  </div>
-                </div>
-              </div>
+              <div class="region-overlay"><div class="region-header"><div><div class="region-title"></div><div class="region-subtitle"></div></div></div></div>
               {pins_html}
             </div>
             """
             st.markdown(map_html, unsafe_allow_html=True)
             if active_regions:
-                st.caption(
-                    "📍 " + "  ·  ".join(f"**{k}**: {v} idea(s)" for k, v in active_regions.items())
-                )
+                st.caption("📍 " + "  ·  ".join(f"**{k}**: {v} idea(s)" for k, v in active_regions.items()))
             else:
                 st.caption("No ideas with a region assigned yet.")
             if no_region_count:
                 st.caption(f"ℹ️ {no_region_count} idea(s) have no region assigned and are excluded.")
-    # ── All Ideas table + CSV (above Kanban) ────────────────────────────
-    st.markdown("##### 📄 All Ideas")
-    search = st.text_input("🔎 Search ideas", placeholder="Filter by name, project, status…")
-    import pandas as pd
-    cols_show = ["idea_name","name","project","category","automation_category","status",
-                 "priority_label","assigned_engineer","roi"]
-    cols_show_tail = ["sprint_start","delivery_date","customer","region","created_date"]
-    rows = []
-    for i in ideas:
-        row = {c: i.get(c,"") for c in cols_show}
-        # feasibility data may contain baseline/new process times stored as JSON
-        fd = i.get("feasibility_data", {}) or {}
-        # extract baseline/new/fte/freq safely
-        try:
-            baseline = float(fd.get("baseline_process_time") or 0) if fd.get("baseline_process_time") not in (None, "") else None
-        except:
-            baseline = None
-        try:
-            newp = float(fd.get("new_process_time") or 0) if fd.get("new_process_time") not in (None, "") else None
-        except:
-            newp = None
-        try:
-            fte_val = float(fd.get("fte") or 0)
-        except:
-            fte_val = 0.0
-        freq_val = fd.get("freq","Daily")
-        # compute savings per occurrence and annual saved hours
-        if baseline is not None and newp is not None and baseline > newp:
-            savings_per_occ = baseline - newp
-        else:
-            # fallback to manual if baseline/new not provided
+    elif st.session_state.dashboard_page == 3:
+        # ── All Ideas table + CSV (above Kanban) ────────────────────────────
+        st.markdown("##### 📄 All Ideas")
+        search = st.text_input("🔎 Search ideas", placeholder="Filter by name, project, status…")
+        import pandas as pd
+        cols_show = ["idea_name","name","project","category","automation_category","status",
+                     "priority_label","assigned_engineer","roi"]
+        cols_show_tail = ["sprint_start","delivery_date","customer","region","created_date"]
+        rows = []
+        for i in ideas:
+            row = {c: i.get(c,"") for c in cols_show}
+            fd = i.get("feasibility_data", {}) or {}
             try:
-                savings_per_occ = float(fd.get("manual", 0) or 0)
+                baseline = float(fd.get("baseline_process_time") or 0) if fd.get("baseline_process_time") not in (None, "") else None
             except:
-                savings_per_occ = 0.0
-        annual_saved = savings_per_occ * fte_val * FREQ_MULT.get(freq_val, FREQ_MULT["Daily"])
+                baseline = None
+            try:
+                newp = float(fd.get("new_process_time") or 0) if fd.get("new_process_time") not in (None, "") else None
+            except:
+                newp = None
+            try:
+                fte_val = float(fd.get("fte") or 0)
+            except:
+                fte_val = 0.0
+            freq_val = fd.get("freq","Daily")
+            if baseline is not None and newp is not None and baseline > newp:
+                savings_per_occ = baseline - newp
+            else:
+                try:
+                    savings_per_occ = float(fd.get("manual", 0) or 0)
+                except:
+                    savings_per_occ = 0.0
+            annual_saved = savings_per_occ * fte_val * FREQ_MULT.get(freq_val, FREQ_MULT["Daily"])
 
-        row["Baseline (hrs)"] = baseline if baseline is not None else ""
-        row["New (hrs)"] = newp if newp is not None else ""
-        row["Savings/occ (hrs)"] = round(savings_per_occ, 2)
-        row["Annual Saved Hrs"] = round(annual_saved, 1)
-        # automation effort stored as 'eng' in feasibility_data
-        try:
-            auto_eff_raw = fd.get("eng", None)
-            auto_eff = float(auto_eff_raw) if auto_eff_raw not in (None, "") else None
-        except:
-            auto_eff = None
-        row["Automation Effort (hrs)"] = round(auto_eff, 1) if auto_eff is not None else ""
-        row["Saving Hours"] = round(idea_hours(i), 1)
-        row.update({c: i.get(c,"") for c in cols_show_tail})
-        rows.append(row)
-    df = pd.DataFrame(rows)
-    if search:
-        mask = df.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)
-        df   = df[mask]
-    st.dataframe(df, use_container_width=True, hide_index=True)
-    csv_buf = io.StringIO()
-    df.to_csv(csv_buf, index=False)
-    st.download_button("⬇️ Download CSV", csv_buf.getvalue(), "turbodrive_ideas.csv", "text/csv")
+            row["Baseline (hrs)"] = baseline if baseline is not None else ""
+            row["New (hrs)"] = newp if newp is not None else ""
+            row["Savings/occ (hrs)"] = round(savings_per_occ, 2)
+            row["Annual Saved Hrs"] = round(annual_saved, 1)
+            try:
+                auto_eff_raw = fd.get("eng", None)
+                auto_eff = float(auto_eff_raw) if auto_eff_raw not in (None, "") else None
+            except:
+                auto_eff = None
+            row["Automation Effort (hrs)"] = round(auto_eff, 1) if auto_eff is not None else ""
+            row["Saving Hours"] = round(idea_hours(i), 1)
+            row.update({c: i.get(c,"") for c in cols_show_tail})
+            rows.append(row)
+        df = pd.DataFrame(rows)
+        if search:
+            mask = df.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)
+            df   = df[mask]
+        st.dataframe(df, use_container_width=True, hide_index=True)
+        csv_buf = io.StringIO()
+        df.to_csv(csv_buf, index=False)
+        st.download_button("⬇️ Download CSV", csv_buf.getvalue(), "turbodrive_ideas.csv", "text/csv")
 
-    # ── Kanban Board ──────────────────────────────────────────────────────
-    st.markdown("##### 📋 Kanban Board")
-    render_kanban_board(ideas)
+        # ── Kanban Board ──────────────────────────────────────────────────────
+        st.markdown("##### 📋 Kanban Board")
+        render_kanban_board(ideas)
 
     render_copyright()
 
