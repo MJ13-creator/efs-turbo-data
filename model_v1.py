@@ -1672,7 +1672,7 @@ def page_dashboard():
     if dashboard_view == "Overview":
         # ── FILTER ROW (moved from original dashboard — kept in one row) ──
         with st.container(border=True):
-            fc1, fc2, fc3, fc4 = st.columns([1.0, 1.0, 1.0, 0.45])
+            fc1, fc2, fc3, fc4 = st.columns([1.0, 1.0, 1.0, 1.0])
             with fc1:
                 f_cat = st.multiselect("Category", all_cats, key="f_cat",
                                        placeholder="All categories", label_visibility="collapsed")
@@ -1691,7 +1691,7 @@ def page_dashboard():
                     for k in ["f_cat", "f_pl", "f_reg"]:
                         st.session_state[k] = []
                     st.rerun()
-                st.caption("Reset filters")
+                
 
         # ── KPI METRICS (replaces auto-scrolling marquee — responsive grid) ──
         with st.container(border=True):
