@@ -1676,15 +1676,15 @@ def page_dashboard():
             with fc1:
                 f_cat = st.multiselect("Category", all_cats, key="f_cat",
                                        placeholder="All categories", label_visibility="collapsed")
-                st.caption("🗂 Category")
+                
             with fc2:
                 f_pl  = st.multiselect("PL/SPL", all_pls, key="f_pl",
                                        placeholder="All PLs", label_visibility="collapsed")
-                st.caption("🧑‍💼 PL / SPL")
+                
             with fc3:
                 f_reg = st.multiselect("Region", all_regs, key="f_reg",
                                        placeholder="All regions", label_visibility="collapsed")
-                st.caption("🌍 Region")
+                
             with fc4:
                 st.markdown("<div style='height:36px;'></div>", unsafe_allow_html=True)
                 if st.button("🔄 Reset", use_container_width=True, key="reset_filters"):
