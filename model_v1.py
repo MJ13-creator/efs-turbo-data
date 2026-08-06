@@ -559,27 +559,46 @@ def apply_theme(theme_name):
         box-shadow:0 1px 4px rgba(0,0,0,.05);
     }}
 
-    /* ── Premium illustrated KPI card (50/50 split) ─────────────────────── */
+    /* ── Premium Glassmorphism KPI card (single-row horizontal) ─────────── */
     .kpi-card-v2{{
-        display:flex;align-items:center;gap:10px;
-        background:{surface};border-radius:16px;padding:12px 14px;
-        box-shadow:0 3px 14px rgba(0,0,0,.08);
-        transition:transform .18s ease, box-shadow .18s ease;
-        margin-bottom:8px;min-height:88px;
+        position:relative;display:flex;align-items:center;gap:12px;
+        background:rgba(255,255,255,.55);
+        backdrop-filter:blur(14px) saturate(160%);
+        -webkit-backdrop-filter:blur(14px) saturate(160%);
+        border-radius:20px;padding:14px 16px;min-height:92px;
+        border:1px solid rgba(255,255,255,.45);
+        box-shadow:0 8px 30px rgba(0,0,0,.10),inset 0 1px 0 rgba(255,255,255,.6);
+        transition:transform .3s ease, box-shadow .3s ease, border-color .3s ease;
+        margin-bottom:8px;overflow:hidden;
+    }}
+    /* gradient accent line at top */
+    .kpi-card-v2::before{{
+        content:"";position:absolute;top:0;left:0;right:0;height:4px;
+        background:linear-gradient(90deg,var(--kpi-g1,#F59E0B),var(--kpi-g2,#FBBF24));
+        border-radius:20px 20px 0 0;
+    }}
+    /* light reflection effect */
+    .kpi-card-v2::after{{
+        content:"";position:absolute;top:0;left:0;right:0;height:45%;
+        background:linear-gradient(180deg,rgba(255,255,255,.42),rgba(255,255,255,0));
+        border-radius:20px 20px 0 0;pointer-events:none;
     }}
     .kpi-card-v2:hover{{
-        transform:translateY(-3px);
-        box-shadow:0 10px 28px rgba(0,0,0,.14);
+        transform:translateY(-4px);
+        box-shadow:0 16px 40px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.6);
+        border-color:rgba(255,255,255,.7);
     }}
     .kpi-v2-illust{{
-        flex:0 0 42%;max-width:60px;aspect-ratio:1/1;
+        flex:0 0 auto;width:52px;height:52px;border-radius:16px;
         display:flex;align-items:center;justify-content:center;
-        opacity:.92;
+        background:color-mix(in srgb,var(--kpi-g2,#FBBF24) 18%,transparent);
+        box-shadow:0 4px 14px color-mix(in srgb,var(--kpi-g2,#FBBF24) 35%,transparent);
+        color:var(--kpi-g2,#FBBF24);
     }}
-    .kpi-v2-content{{flex:1;min-width:0;}}
-    .kpi-v2-value{{font-size:clamp(22px,2.2vw,30px);font-weight:800;line-height:1.1;}}
-    .kpi-v2-label{{font-size:clamp(9px,0.85vw,11px);color:#64748b;font-weight:600;margin-top:2px;}}
-    .kpi-v2-sub{{font-size:clamp(8px,0.7vw,9.5px);color:#94a3b8;margin-top:3px;line-height:1.4;}}
+    .kpi-v2-content{{flex:1;min-width:0;position:relative;z-index:1;}}
+    .kpi-v2-value{{font-size:clamp(24px,2.4vw,32px);font-weight:800;line-height:1.1;}}
+    .kpi-v2-label{{font-size:clamp(9px,0.85vw,11px);color:#475569;font-weight:700;margin-top:2px;letter-spacing:.2px;}}
+    .kpi-v2-sub{{font-size:clamp(8px,0.7vw,9.5px);color:#7c8aa0;margin-top:3px;line-height:1.4;}}
 
     /* ── Glassmorphism category panel (Automation / AI breakdown) ──────── */
     .glass-panel{{
@@ -805,8 +824,9 @@ KPI_ILLUSTRATIONS = {
     </svg>""",
 }
 
-def premium_kpi_card(value, label, color, sub="", illustration="total_ideas", trend=None):
-    """50/50 illustration | value+trend KPI card."""
+def premium_kpi_card(value, label, color, color2="", sub="", illustration="total_ideas", trend=None):
+    """Premium glassmorphism KPI card — single-row horizontal layout.
+    `color` / `color2` define the gradient accent line & icon container glow."""
     trend_html = ""
     if trend is not None:
         up = trend >= 0
@@ -814,11 +834,12 @@ def premium_kpi_card(value, label, color, sub="", illustration="total_ideas", tr
         arrow = "▲" if up else "▼"
         trend_html = f'<div style="font-size:11px;font-weight:700;color:{tcol};margin-top:2px;">{arrow} {abs(trend):.1f}%</div>'
     svg = KPI_ILLUSTRATIONS.get(illustration, KPI_ILLUSTRATIONS["total_ideas"])
+    g2 = color2 if color2 else color
     st.markdown(f"""
-    <div class="kpi-card-v2" style="border-top:4px solid {color};">
-      <div class="kpi-v2-illust" style="color:{color};">{svg}</div>
+    <div class="kpi-card-v2" style="--kpi-g1:{color};--kpi-g2:{g2};">
+      <div class="kpi-v2-illust">{svg}</div>
       <div class="kpi-v2-content">
-        <div class="kpi-v2-value" style="color:{color};">{value}</div>
+        <div class="kpi-v2-value" style="color:{g2};">{value}</div>
         <div class="kpi-v2-label">{label}</div>
         {f'<div class="kpi-v2-sub">{sub}</div>' if sub else ''}
         {trend_html}
@@ -1592,7 +1613,7 @@ def page_dashboard():
 
     # ── VIEW SELECTOR (segmented control) ─────────────────────────────────
     dashboard_view = st.segmented_control(
-        "Explore Views",
+        "Dashboard View",
         ["Overview", "Analytics", "Idea Management"],
         default="Overview",
         key="dashboard_view",
