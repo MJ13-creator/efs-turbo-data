@@ -1672,7 +1672,7 @@ def page_dashboard():
     if dashboard_view == "Overview":
         # ── FILTER ROW (moved from original dashboard — kept in one row) ──
         with st.container(border=True):
-            fc1, fc2, fc3, fc4 = st.columns([1.0, 1.0, 1.0, 1.0])
+            fc1, fc2, fc3, fc4 = st.columns([1.0, 1.0, 1.0, 0.5])
             with fc1:
                 f_cat = st.multiselect("Category", all_cats, key="f_cat",
                                        placeholder="All categories", label_visibility="collapsed")
@@ -1686,7 +1686,7 @@ def page_dashboard():
                                        placeholder="All regions", label_visibility="collapsed")
                 
             with fc4:
-                st.markdown("<div style='height:36px;'></div>", unsafe_allow_html=True)
+                #st.markdown("<div style='height:36px;'></div>", unsafe_allow_html=True)
                 if st.button("🔄 Reset", use_container_width=True, key="reset_filters"):
                     for k in ["f_cat", "f_pl", "f_reg"]:
                         st.session_state[k] = []
