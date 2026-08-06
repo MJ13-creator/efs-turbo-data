@@ -2056,7 +2056,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
                     "type": "pie",
                     "radius": ["35%", "72%"],
                     "center": ["50%", "42%"],
-                    "data": [{"value": v, "name": l, "itemStyle": {"color": c}} for v, l, c in zip(status_vals, status_labels, status_cols)],
+                    "data": [{"value": v, "name": l, "itemStyle": {"color": c}} for v, l, c in zip(status_vals, status_cols)],
                     "label": {
                         "show": True,
                         "fontSize": 9,
@@ -2069,7 +2069,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
 
         with chart2:
             # ── Project → Customer Hierarchy (grouped BAR chart — Idea Count per Customer per Project) ──
-            st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Project → Customer Hierarchy</span>", unsafe_allow_html=True)
+            st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Project → Customer (Hierarchy)</span>", unsafe_allow_html=True)
             project_customer_map = {}
             project_customer_roi = {}
             for i in ideas:
@@ -2117,7 +2117,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
 
         with chart3:
             # ── Region World Map (moved from original) ──
-            st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>🌍 Region — World Map</span>", unsafe_allow_html=True)
+            st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Region-World Map</span>", unsafe_allow_html=True)
             region_data = {}
             for i in ideas:
                 r = (i.get("region","") or "").strip()
