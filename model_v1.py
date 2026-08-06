@@ -978,32 +978,75 @@ def _render_kpi_row(total, completed, completed_pct, cust_hrs, int_hrs, cust_roi
     *{margin:0;padding:0;box-sizing:border-box;}
     .kpi-wrap{width:100%;font-family:'Inter',sans-serif;}
     .kpi-row{display:flex;gap:14px;width:100%;}
+
+    /* ── Premium Glassmorphism card (Microsoft Fabric / Power BI / Vision Pro) ── */
     .kpi-card-v2{
       position:relative;flex:1;min-width:0;display:flex;align-items:center;gap:12px;
-      background:rgba(255,255,255,.55);
-      backdrop-filter:blur(14px) saturate(160%);
-      -webkit-backdrop-filter:blur(14px) saturate(160%);
-      border-radius:20px;padding:14px 16px;min-height:92px;
-      border:1px solid rgba(255,255,255,.45);
-      box-shadow:0 8px 30px rgba(0,0,0,.10),inset 0 1px 0 rgba(255,255,255,.6);
+      background:rgba(255,255,255,.15);
+      backdrop-filter:blur(16px) saturate(180%);
+      -webkit-backdrop-filter:blur(16px) saturate(180%);
+      border-radius:22px;padding:14px 16px;min-height:92px;
+      border:1px solid rgba(255,255,255,.25);
+      box-shadow:0 8px 32px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.6);
       transition:transform .3s ease,box-shadow .3s ease,border-color .3s ease,background .3s ease,opacity .3s ease;
       overflow:hidden;
     }
-    /* gradient top accent bar (5px, full width, rounded, subtle glow) */
+    /* gradient top accent bar (5px, full width, rounded, color-matched glow) */
     .kpi-card-v2::before{
       content:"";position:absolute;top:0;left:0;right:0;height:5px;
       background:linear-gradient(90deg,var(--kpi-g1,#F59E0B),var(--kpi-g2,#FBBF24));
-      border-radius:20px 20px 0 0;
+      border-radius:22px 22px 0 0;
       box-shadow:0 0 8px var(--kpi-g2,#FBBF24);
       z-index:3;
     }
-    /* existing top light reflection */
+    /* top light reflection */
     .kpi-card-v2::after{
       content:"";position:absolute;top:0;left:0;right:0;height:45%;
       background:linear-gradient(180deg,rgba(255,255,255,.42),rgba(255,255,255,0));
-      border-radius:20px 20px 0 0;pointer-events:none;
+      border-radius:22px 22px 0 0;pointer-events:none;
     }
-    /* glass reflection sweep — every 8s, GPU transform, no flashing */
+
+    /* ── 1. Total Ideas — bulb ON/OFF glow (2s, ease-in-out) ─────────────── */
+    @keyframes kpiBulbGlow{
+      0%,100%{opacity:.55;filter:drop-shadow(0 0 2px rgba(251,191,36,.35));}
+      50%{opacity:1;filter:drop-shadow(0 0 9px rgba(251,191,36,.85));}
+    }
+    .kpi-anim-bulb{animation:kpiBulbGlow 2s ease-in-out infinite;}
+
+    /* ── 2. Completed — trophy golden glow (3s) + shine sweep ────────────── */
+    @keyframes kpiTrophyGlow{
+      0%,100%{opacity:.7;filter:drop-shadow(0 0 3px rgba(251,191,36,.35));}
+      50%{opacity:1;filter:drop-shadow(0 0 11px rgba(251,191,36,.85));}
+    }
+    .kpi-anim-trophy{animation:kpiTrophyGlow 3s ease-in-out infinite;}
+    @keyframes kpiShineSweep{
+      0%{transform:translateX(-22px);opacity:0;}
+      15%{opacity:.7;}
+      55%{transform:translateX(22px);opacity:0;}
+      100%{transform:translateX(22px);opacity:0;}
+    }
+    .kpi-shine{animation:kpiShineSweep 3s ease-in-out infinite;}
+
+    /* ── 3. Hours Saved — clock minute hand continuous rotation ──────────── */
+    @keyframes kpiClockSpin{
+      from{transform:rotate(0deg);}
+      to{transform:rotate(360deg);}
+    }
+    .kpi-clock-hand{transform-origin:32px 34px;animation:kpiClockSpin 12s linear infinite;}
+
+    /* ── 4. ROI — growth arrow rises + line pulses (1.5s) ────────────────── */
+    @keyframes kpiGrowthRise{
+      0%,100%{transform:translateY(0);}
+      50%{transform:translateY(-3px);}
+    }
+    .kpi-anim-growth{animation:kpiGrowthRise 1.5s ease-in-out infinite;}
+    @keyframes kpiGrowthPulse{
+      0%,100%{opacity:.45;}
+      50%{opacity:1;}
+    }
+    .kpi-growth-line{animation:kpiGrowthPulse 1.5s ease-in-out infinite;}
+
+    /* ── glass reflection sweep — every 8s, GPU transform, elegant ──────── */
     .kpi-sweep{
       position:absolute;top:0;left:0;width:38%;height:100%;
       background:linear-gradient(105deg,transparent,rgba(255,255,255,.22),transparent);
@@ -1030,21 +1073,23 @@ def _render_kpi_row(total, completed, completed_pct, cust_hrs, int_hrs, cust_roi
     .kpi-v2-label{font-size:clamp(9px,0.85vw,11px);color:#475569;font-weight:700;margin-top:2px;letter-spacing:.2px;}
     .kpi-v2-sub{font-size:clamp(8px,0.7vw,9.5px);color:#7c8aa0;margin-top:3px;line-height:1.4;}
     /* mini sparkline — bottom-right, low visual weight, no axes/labels */
-    .kpi-spark{position:absolute;right:10px;bottom:8px;width:64px;height:24px;pointer-events:none;z-index:1;opacity:.6;}
-    /* hover focus: dim non-hovered siblings slightly, lift + brighten hovered */
-    .kpi-row:hover .kpi-card-v2{opacity:.93;}
+    .kpi-spark{position:absolute;right:10px;bottom:8px;width:64px;height:24px;pointer-events:none;z-index:1;opacity:.6;transition:opacity .3s ease;}
+
+    /* ── hover focus: dim non-hovered siblings slightly, lift + brighten ── */
+    .kpi-row:hover .kpi-card-v2{opacity:.92;}
     .kpi-row:hover .kpi-card-v2:hover{opacity:1;}
     .kpi-card-v2:hover{
       transform:translateY(-4px);
-      box-shadow:0 16px 40px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.6);
-      border-color:rgba(255,255,255,.7);
-      background:rgba(255,255,255,.72);
-      backdrop-filter:blur(18px) saturate(180%);
+      box-shadow:0 18px 48px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.7);
+      border-color:rgba(255,255,255,.55);
+      background:rgba(255,255,255,.28);
+      backdrop-filter:blur(20px) saturate(200%);
     }
     .kpi-card-v2:hover .kpi-v2-illust{
       transform:scale(1.06);
       box-shadow:0 6px 22px color-mix(in srgb,var(--kpi-g2,#FBBF24) 60%,transparent);
     }
+    .kpi-card-v2:hover .kpi-spark{opacity:.9;}
     """
     js = """
     (function(){
@@ -1840,7 +1885,7 @@ def page_dashboard():
 
     # ── VIEW SELECTOR (segmented control) ─────────────────────────────────
     dashboard_view = st.segmented_control(
-        "Dashboard View",
+        "Explore Views",
         ["Overview", "Analytics", "Idea Management"],
         default="Overview",
         key="dashboard_view",
@@ -2234,7 +2279,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
 
         with chart2:
             # ── Project → Customer Hierarchy (grouped BAR chart — Idea Count per Customer per Project) ──
-            st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Project → Customer Hierarchy</span>", unsafe_allow_html=True)
+            st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Project → Customer (Hierarchy)</span>", unsafe_allow_html=True)
             project_customer_map = {}
             project_customer_roi = {}
             for i in ideas:
@@ -2282,7 +2327,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
 
         with chart3:
             # ── Region World Map (moved from original) ──
-            st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>🌍 Region — World Map</span>", unsafe_allow_html=True)
+            st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Region-World Map</span>", unsafe_allow_html=True)
             region_data = {}
             for i in ideas:
                 r = (i.get("region","") or "").strip()
