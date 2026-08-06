@@ -433,7 +433,8 @@ PL / SPL    : {idea.get('pl_name','-')}"""
 # ══════════════════════════════════════════════════════════════════════════════
 def render_support_bar():
     st.markdown(
-        f'<p style="font-size:11px;color:#94a3b8;margin-top:-10px;margin-bottom:10px;">'
+        f'<p style="font-size:11px;color:#94a3b8;margin-top:-10px;margin-bottom:10px;'
+        f'margin-left:57px;padding-left:0;">'
         f'For any queries, reach out to <b>{SUPPORT_NAME}</b> — '
         f'<a href="mailto:{SUPPORT_EMAIL}" style="color:#00AEEF;">{SUPPORT_EMAIL}</a></p>',
         unsafe_allow_html=True
@@ -1591,7 +1592,7 @@ def page_dashboard():
 
     # ── VIEW SELECTOR (segmented control) ─────────────────────────────────
     dashboard_view = st.segmented_control(
-        "Select Page",
+        "Dashboard View",
         ["Overview", "Analytics", "Idea Management"],
         default="Overview",
         key="dashboard_view",
