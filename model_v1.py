@@ -559,6 +559,25 @@ def apply_theme(theme_name):
         box-shadow:0 1px 4px rgba(0,0,0,.05);
     }}
 
+    /* Reset button in dashboard filter row — match the multiselect filter
+       boxes (surface background, border, rounded format) so fc4 blends in */
+    [data-testid="stButton"] button#reset_filters{{
+        background:{surface} !important;
+        color:{t['primary']} !important;
+        border:1px solid #e2e8f0 !important;
+        border-radius:8px !important;
+        font-weight:600 !important;
+        height:38px !important;
+        padding:0 16px !important;
+        box-shadow:0 1px 2px rgba(0,0,0,.04) !important;
+    }}
+    [data-testid="stButton"] button#reset_filters:hover{{
+        background:{surface} !important;
+        border-color:{t['primary']} !important;
+        color:{t['primary']} !important;
+        opacity:1 !important;
+    }}
+
     /* ── Premium Glassmorphism KPI card (single-row horizontal) ─────────── */
     .kpi-card-v2{{
         position:relative;display:flex;align-items:center;gap:12px;
@@ -874,9 +893,14 @@ KPI_ILLUSTRATIONS = {
     </svg>""",
 }
 
-def premium_kpi_card(value, label, color, color2="", sub="", illustration="total_ideas", trend=None):
-    """Premium glassmorphism KPI card — single-row horizontal layout.
-    `color` / `color2` define the gradient accent line & icon container glow."""
+def _premium_kpi_html(value, label, color, color2="", sub="", illustration="total_ideas",
+                      trend=None, count=None, count_format="plain", spark="", uid=""):
+    """Return the premium KPI card HTML string.
+
+    `color` / `color2` define the gradient accent bar & icon-container glow.
+    `count` / `count_format` enable the animated count-up (JS reads data-count).
+    `spark` is an SVG path drawn as a mini sparkline in the card's bottom-right.
+    Used by `premium_kpi_card` (st.markdown) and `_render_kpi_row` (iframe)."""
     trend_html = ""
     if trend is not None:
         up = trend >= 0
@@ -885,16 +909,169 @@ def premium_kpi_card(value, label, color, color2="", sub="", illustration="total
         trend_html = f'<div style="font-size:11px;font-weight:700;color:{tcol};margin-top:2px;">{arrow} {abs(trend):.1f}%</div>'
     svg = KPI_ILLUSTRATIONS.get(illustration, KPI_ILLUSTRATIONS["total_ideas"])
     g2 = color2 if color2 else color
-    st.markdown(f"""
+    count_attr = f' data-count="{count}" data-format="{count_format}"' if count is not None else ""
+    spark_svg = ""
+    if spark:
+        spark_id = f"spark{uid}"
+        spark_svg = f'''
+        <svg class="kpi-spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="{spark_id}" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="{g2}" stop-opacity=".32"/>
+              <stop offset="100%" stop-color="{g2}" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path d="{spark}" fill="none" stroke="{g2}" stroke-width="1.5" stroke-linecap="round" opacity=".85"/>
+          <path d="{spark} L100,28 L0,28 Z" fill="url(#{spark_id})"/>
+        </svg>'''
+    return f"""
     <div class="kpi-card-v2" style="--kpi-g1:{color};--kpi-g2:{g2};">
+      <div class="kpi-sweep"></div>
       <div class="kpi-v2-illust">{svg}</div>
       <div class="kpi-v2-content">
-        <div class="kpi-v2-value" style="color:{g2};">{value}</div>
+        <div class="kpi-v2-value" style="color:{g2};"{count_attr}>{value}</div>
         <div class="kpi-v2-label">{label}</div>
         {f'<div class="kpi-v2-sub">{sub}</div>' if sub else ''}
         {trend_html}
       </div>
-    </div>""", unsafe_allow_html=True)
+      {spark_svg}
+    </div>"""
+
+
+def premium_kpi_card(value, label, color, color2="", sub="", illustration="total_ideas", trend=None):
+    """Premium glassmorphism KPI card — single-row horizontal layout.
+    `color` / `color2` define the gradient accent line & icon container glow."""
+    st.markdown(_premium_kpi_html(value, label, color, color2, sub, illustration, trend),
+                unsafe_allow_html=True)
+
+
+def _render_kpi_row(total, completed, completed_pct, cust_hrs, int_hrs, cust_roi, int_roi):
+    """Render the 4 KPI cards as a single self-contained HTML iframe component.
+
+    Streamlit's st.markdown does not execute <script>, so the animated counters
+    (JS) run inside a st.components.v1.html iframe. The component also carries
+    its own CSS so the gradient accent bars, sparklines, glass sweep and hover
+    focus effects all apply inside the isolated iframe document. The cards stay
+    in ONE horizontal row (flex) and never change card height / layout."""
+    cards_html = (
+        '<div class="kpi-row">'
+        + _premium_kpi_html(total, "Total Ideas", "#f59e0b", "#fbbf24",
+                            "All registered ideas", "total_ideas",
+                            count=total, count_format="plain", uid="a",
+                            spark="M0,22 C12,20 18,14 26,16 C34,18 40,8 50,10 C60,12 66,6 74,8 C82,10 90,4 100,6")
+        + _premium_kpi_html(completed, "Completed", "#10b981", "#34d399",
+                            f"{completed_pct}% completion", "trophy",
+                            count=completed, count_format="plain", uid="b",
+                            spark="M0,24 C10,22 16,16 24,18 C32,20 38,12 48,14 C58,16 64,10 74,12 C82,13 90,8 100,9")
+        + _premium_kpi_html(f"{cust_hrs+int_hrs:,.0f}", "Total Projected Hrs Saved / yr",
+                            "#14b8a6", "#2dd4bf", "Customer + Internal hours", "clock",
+                            count=cust_hrs+int_hrs, count_format="comma", uid="c",
+                            spark="M0,20 C10,18 16,22 26,18 C36,14 44,16 54,12 C64,8 72,10 82,7 C90,5 96,6 100,4")
+        + _premium_kpi_html(cust_roi+int_roi, "Total ROI", "#c2410c", "#f97316",
+                            "Customer + Internal ROI", "growth",
+                            count=cust_roi+int_roi, count_format="decimal", uid="d",
+                            spark="M0,26 C10,24 18,20 28,22 C38,24 46,16 56,18 C66,20 74,12 84,14 C92,15 97,10 100,8")
+        + '</div>'
+    )
+    css = """
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    *{margin:0;padding:0;box-sizing:border-box;}
+    .kpi-wrap{width:100%;font-family:'Inter',sans-serif;}
+    .kpi-row{display:flex;gap:14px;width:100%;}
+    .kpi-card-v2{
+      position:relative;flex:1;min-width:0;display:flex;align-items:center;gap:12px;
+      background:rgba(255,255,255,.55);
+      backdrop-filter:blur(14px) saturate(160%);
+      -webkit-backdrop-filter:blur(14px) saturate(160%);
+      border-radius:20px;padding:14px 16px;min-height:92px;
+      border:1px solid rgba(255,255,255,.45);
+      box-shadow:0 8px 30px rgba(0,0,0,.10),inset 0 1px 0 rgba(255,255,255,.6);
+      transition:transform .3s ease,box-shadow .3s ease,border-color .3s ease,background .3s ease,opacity .3s ease;
+      overflow:hidden;
+    }
+    /* gradient top accent bar (5px, full width, rounded, subtle glow) */
+    .kpi-card-v2::before{
+      content:"";position:absolute;top:0;left:0;right:0;height:5px;
+      background:linear-gradient(90deg,var(--kpi-g1,#F59E0B),var(--kpi-g2,#FBBF24));
+      border-radius:20px 20px 0 0;
+      box-shadow:0 0 8px var(--kpi-g2,#FBBF24);
+      z-index:3;
+    }
+    /* existing top light reflection */
+    .kpi-card-v2::after{
+      content:"";position:absolute;top:0;left:0;right:0;height:45%;
+      background:linear-gradient(180deg,rgba(255,255,255,.42),rgba(255,255,255,0));
+      border-radius:20px 20px 0 0;pointer-events:none;
+    }
+    /* glass reflection sweep — every 8s, GPU transform, no flashing */
+    .kpi-sweep{
+      position:absolute;top:0;left:0;width:38%;height:100%;
+      background:linear-gradient(105deg,transparent,rgba(255,255,255,.22),transparent);
+      transform:translateX(-160%) skewX(-18deg);
+      animation:kpiSweep 8s ease-in-out infinite;
+      pointer-events:none;z-index:2;will-change:transform;
+    }
+    @keyframes kpiSweep{
+      0%{transform:translateX(-160%) skewX(-18deg);opacity:0;}
+      10%{opacity:1;}
+      45%{transform:translateX(340%) skewX(-18deg);opacity:0;}
+      100%{transform:translateX(340%) skewX(-18deg);opacity:0;}
+    }
+    .kpi-v2-illust{
+      flex:0 0 auto;width:52px;height:52px;border-radius:16px;
+      display:flex;align-items:center;justify-content:center;
+      background:color-mix(in srgb,var(--kpi-g2,#FBBF24) 18%,transparent);
+      box-shadow:0 4px 14px color-mix(in srgb,var(--kpi-g2,#FBBF24) 35%,transparent);
+      color:var(--kpi-g2,#FBBF24);
+      transition:transform .3s ease,box-shadow .3s ease;
+    }
+    .kpi-v2-content{flex:1;min-width:0;position:relative;z-index:1;}
+    .kpi-v2-value{font-size:clamp(24px,2.4vw,32px);font-weight:800;line-height:1.1;}
+    .kpi-v2-label{font-size:clamp(9px,0.85vw,11px);color:#475569;font-weight:700;margin-top:2px;letter-spacing:.2px;}
+    .kpi-v2-sub{font-size:clamp(8px,0.7vw,9.5px);color:#7c8aa0;margin-top:3px;line-height:1.4;}
+    /* mini sparkline — bottom-right, low visual weight, no axes/labels */
+    .kpi-spark{position:absolute;right:10px;bottom:8px;width:64px;height:24px;pointer-events:none;z-index:1;opacity:.6;}
+    /* hover focus: dim non-hovered siblings slightly, lift + brighten hovered */
+    .kpi-row:hover .kpi-card-v2{opacity:.93;}
+    .kpi-row:hover .kpi-card-v2:hover{opacity:1;}
+    .kpi-card-v2:hover{
+      transform:translateY(-4px);
+      box-shadow:0 16px 40px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.6);
+      border-color:rgba(255,255,255,.7);
+      background:rgba(255,255,255,.72);
+      backdrop-filter:blur(18px) saturate(180%);
+    }
+    .kpi-card-v2:hover .kpi-v2-illust{
+      transform:scale(1.06);
+      box-shadow:0 6px 22px color-mix(in srgb,var(--kpi-g2,#FBBF24) 60%,transparent);
+    }
+    """
+    js = """
+    (function(){
+      function easeOutCubic(t){return 1-Math.pow(1-t,3);}
+      function fmt(n,f){
+        if(f==='comma')return Math.round(n).toLocaleString('en-US');
+        if(f==='decimal')return n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+        return Math.round(n).toString();
+      }
+      document.querySelectorAll('.kpi-v2-value[data-count]').forEach(function(el){
+        var target=parseFloat(el.getAttribute('data-count'));
+        var f=el.getAttribute('data-format')||'plain';
+        var dur=1800,start=null;
+        function step(ts){
+          if(!start)start=ts;
+          var p=Math.min((ts-start)/dur,1);
+          el.textContent=fmt(target*easeOutCubic(p),f);
+          if(p<1)requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      });
+    })();
+    """
+    st.components.v1.html(
+        f"<div class='kpi-wrap'><style>{css}</style>{cards_html}<script>{js}</script></div>",
+        height=132, scrolling=False
+    )
 
 # ── Robotic arm SVG (Automation panel) — arm rotates/points per category idx
 def cnt_cat_status(cat, st_, ideas):
@@ -1663,7 +1840,7 @@ def page_dashboard():
 
     # ── VIEW SELECTOR (segmented control) ─────────────────────────────────
     dashboard_view = st.segmented_control(
-        "Explore Views",
+        "Dashboard View",
         ["Overview", "Analytics", "Idea Management"],
         default="Overview",
         key="dashboard_view",
@@ -1765,21 +1942,10 @@ def page_dashboard():
                     st.rerun()
                 
 
-        # ── KPI METRICS (replaces auto-scrolling marquee — responsive grid) ──
+        # ── KPI METRICS (single horizontal row — enhanced: animated counters,
+        #    gradient top accent bars, mini sparklines, glass sweep, hover focus) ──
         with st.container(border=True):
-            k1, k2, k3, k4 = st.columns(4)
-            with k1:
-                premium_kpi_card(total, "Total Ideas", "#facc15",
-                                 sub="All registered ideas", illustration="total_ideas")
-            with k2:
-                premium_kpi_card(completed, "Completed", "#059669",
-                                 sub=f"{completed_pct}% completion", illustration="trophy")
-            with k3:
-                premium_kpi_card(f"{cust_hrs+int_hrs:,.0f}", "Total Projected Hrs Saved / yr",
-                                 "#0d9488", sub="Customer + Internal hours", illustration="clock")
-            with k4:
-                premium_kpi_card(cust_roi+int_roi, "Total ROI", "#b45309",
-                                 sub="Customer + Internal ROI", illustration="growth")
+            _render_kpi_row(total, completed, completed_pct, cust_hrs, int_hrs, cust_roi, int_roi)
 
         # ── AUTOMATION & AI CATEGORY BREAKDOWN (canvas resized to 380) ─────
         st.markdown("##### 🤖 Automation & AI Category Breakdown")
@@ -2068,7 +2234,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
 
         with chart2:
             # ── Project → Customer Hierarchy (grouped BAR chart — Idea Count per Customer per Project) ──
-            st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Project → Customer (Hierarchy)</span>", unsafe_allow_html=True)
+            st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Project → Customer Hierarchy</span>", unsafe_allow_html=True)
             project_customer_map = {}
             project_customer_roi = {}
             for i in ideas:
@@ -2116,7 +2282,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
 
         with chart3:
             # ── Region World Map (moved from original) ──
-            st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Region-World Map</span>", unsafe_allow_html=True)
+            st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>🌍 Region — World Map</span>", unsafe_allow_html=True)
             region_data = {}
             for i in ideas:
                 r = (i.get("region","") or "").strip()
