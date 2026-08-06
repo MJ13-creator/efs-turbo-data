@@ -2051,12 +2051,11 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
             status_cols   = [STATUS_COLORS.get(s, "#888") for s in STATUSES]
             st_echarts({
                 "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"},
-                "legend": {"bottom": 0, "textStyle": {"fontSize": 9}},
                 "series": [{
                     "type": "pie",
                     "radius": ["35%", "72%"],
                     "center": ["50%", "42%"],
-                    "data": [{"value": v, "name": l, "itemStyle": {"color": c}} for v, l, c in zip(status_vals,status_labels, status_cols)],
+                    "data": [{"value": v, "name": l, "itemStyle": {"color": c}} for v, l, c in zip(status_vals, status_labels, status_cols)],
                     "label": {
                         "show": True,
                         "fontSize": 9,
