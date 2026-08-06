@@ -600,6 +600,51 @@ def apply_theme(theme_name):
     .kpi-v2-label{{font-size:clamp(9px,0.85vw,11px);color:#475569;font-weight:700;margin-top:2px;letter-spacing:.2px;}}
     .kpi-v2-sub{{font-size:clamp(8px,0.7vw,9.5px);color:#7c8aa0;margin-top:3px;line-height:1.4;}}
 
+    /* ── KPI Icon Animations (GPU-friendly, subtle, enterprise) ────────── */
+    /* 1. Total Ideas — bulb dim/bright with soft glowing halo */
+    @keyframes kpiBulbGlow{{
+        0%,100%{{opacity:.55;filter:drop-shadow(0 0 2px rgba(251,191,36,.35));}}
+        50%{{opacity:1;filter:drop-shadow(0 0 9px rgba(251,191,36,.8));}}
+    }}
+    .kpi-anim-bulb{{animation:kpiBulbGlow 2s ease-in-out infinite;}}
+
+    /* 2. Completed — trophy golden glow intensifies/fades */
+    @keyframes kpiTrophyGlow{{
+        0%,100%{{opacity:.7;filter:drop-shadow(0 0 3px rgba(251,191,36,.35));}}
+        50%{{opacity:1;filter:drop-shadow(0 0 11px rgba(251,191,36,.85));}}
+    }}
+    .kpi-anim-trophy{{animation:kpiTrophyGlow 3s ease-in-out infinite;}}
+
+    /* 2b. Trophy shine sweep — subtle light passing across periodically */
+    @keyframes kpiShineSweep{{
+        0%{{transform:translateX(-22px);opacity:0;}}
+        15%{{opacity:.7;}}
+        55%{{transform:translateX(22px);opacity:0;}}
+        100%{{transform:translateX(22px);opacity:0;}}
+    }}
+    .kpi-shine{{animation:kpiShineSweep 3s ease-in-out infinite;}}
+
+    /* 3. Hours Saved — clock minute hand continuous rotation */
+    @keyframes kpiClockSpin{{
+        from{{transform:rotate(0deg);}}
+        to{{transform:rotate(360deg);}}
+    }}
+    .kpi-clock-hand{{transform-origin:32px 34px;animation:kpiClockSpin 12s linear infinite;}}
+
+    /* 4. ROI — growth arrow gently rises and returns */
+    @keyframes kpiGrowthRise{{
+        0%,100%{{transform:translateY(0);}}
+        50%{{transform:translateY(-3px);}}
+    }}
+    .kpi-anim-growth{{animation:kpiGrowthRise 1.5s ease-in-out infinite;}}
+
+    /* 4b. ROI — growth line subtly pulses */
+    @keyframes kpiGrowthPulse{{
+        0%,100%{{opacity:.45;}}
+        50%{{opacity:1;}}
+    }}
+    .kpi-growth-line{{animation:kpiGrowthPulse 1.5s ease-in-out infinite;}}
+
     /* ── Glassmorphism category panel (Automation / AI breakdown) ──────── */
     .glass-panel{{
         background:rgba(255,255,255,.55);
@@ -767,33 +812,38 @@ def kpi_card(value, label, color, sub="", icon=""):
 
 # ── Premium illustrated KPI card (50/50 split: big illustration | value+trend) ──
 KPI_ILLUSTRATIONS = {
-    "total_ideas": """<svg viewBox="0 0 64 64" width="100%" height="100%">
+    "total_ideas": """<svg class="kpi-anim-bulb" viewBox="0 0 64 64" width="100%" height="100%">
+        <circle cx="32" cy="26" r="19" fill="rgba(251,191,36,.18)" opacity=".6"/>
         <circle cx="32" cy="26" r="16" fill="none" stroke="currentColor" stroke-width="3" opacity=".25"/>
         <path d="M32 10a16 16 0 0 1 9 29c-1.5 1-2 2.5-2 4v3H25v-3c0-1.5-.5-3-2-4a16 16 0 0 1 9-29z"
-              fill="currentColor" opacity=".9"/>
+              fill="currentColor" opacity=".95"/>
         <rect x="25" y="48" width="14" height="4" rx="2" fill="currentColor"/>
         <rect x="27" y="54" width="10" height="3" rx="1.5" fill="currentColor" opacity=".7"/>
         <line x1="32" y1="2" x2="32" y2="7" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
         <line x1="12" y1="10" x2="16" y2="14" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity=".6"/>
         <line x1="52" y1="10" x2="48" y2="14" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity=".6"/>
     </svg>""",
-    "trophy": """<svg viewBox="0 0 64 64" width="100%" height="100%">
-        <path d="M18 10h28v14a14 14 0 0 1-28 0V10z" fill="currentColor" opacity=".9"/>
+    "trophy": """<svg class="kpi-anim-trophy" viewBox="0 0 64 64" width="100%" height="100%">
+        <circle cx="32" cy="20" r="20" fill="rgba(251,191,36,.15)" opacity=".6"/>
+        <path d="M18 10h28v14a14 14 0 0 1-28 0V10z" fill="currentColor" opacity=".95"/>
         <path d="M18 14h-6a8 8 0 0 0 8 8" fill="none" stroke="currentColor" stroke-width="3"/>
         <path d="M46 14h6a8 8 0 0 1-8 8" fill="none" stroke="currentColor" stroke-width="3"/>
         <rect x="29" y="38" width="6" height="10" fill="currentColor"/>
         <rect x="20" y="48" width="24" height="6" rx="2" fill="currentColor" opacity=".85"/>
+        <rect class="kpi-shine" x="18" y="10" width="8" height="4" rx="2" fill="#fff" opacity=".7"/>
         <circle cx="32" cy="20" r="5" fill="#fff" opacity=".5"/>
     </svg>""",
     "clock": """<svg viewBox="0 0 64 64" width="100%" height="100%">
         <circle cx="32" cy="34" r="22" fill="none" stroke="currentColor" stroke-width="3.5" opacity=".9"/>
-        <line x1="32" y1="34" x2="32" y2="20" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+        <g class="kpi-clock-hand">
+            <line x1="32" y1="34" x2="32" y2="20" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+        </g>
         <line x1="32" y1="34" x2="42" y2="38" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
         <rect x="26" y="6" width="12" height="5" rx="2.5" fill="currentColor"/>
         <circle cx="32" cy="34" r="2.5" fill="currentColor"/>
     </svg>""",
-    "growth": """<svg viewBox="0 0 64 64" width="100%" height="100%">
-        <polyline points="8,48 22,34 32,42 56,14" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    "growth": """<svg class="kpi-anim-growth" viewBox="0 0 64 64" width="100%" height="100%">
+        <polyline class="kpi-growth-line" points="8,48 22,34 32,42 56,14" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
         <polygon points="56,14 56,24 46,14" fill="currentColor"/>
         <rect x="8" y="50" width="48" height="3" rx="1.5" fill="currentColor" opacity=".3"/>
         <circle cx="22" cy="34" r="3" fill="currentColor"/>
@@ -2007,7 +2057,12 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
                     "radius": ["35%", "72%"],
                     "center": ["50%", "42%"],
                     "data": [{"value": v, "name": l, "itemStyle": {"color": c}} for v, l, c in zip(status_vals, status_labels, status_cols)],
-                    "label": {"fontSize": 9, "formatter": "{b}"},
+                    "label": {
+                        "show": True,
+                        "fontSize": 9,
+                        "formatter": "{b}: {c}",
+                        "color": "#111827",
+                    },
                     "labelLine": {"length": 5, "length2": 3},
                 }]
             }, height="320px")
