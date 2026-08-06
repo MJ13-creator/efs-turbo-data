@@ -1663,7 +1663,7 @@ def page_dashboard():
 
     # ── VIEW SELECTOR (segmented control) ─────────────────────────────────
     dashboard_view = st.segmented_control(
-        "Dashboard View",
+        "Explore Views",
         ["Overview", "Analytics", "Idea Management"],
         default="Overview",
         key="dashboard_view",
