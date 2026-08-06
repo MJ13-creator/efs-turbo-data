@@ -1592,7 +1592,7 @@ def page_dashboard():
 
     # ── VIEW SELECTOR (segmented control) ─────────────────────────────────
     dashboard_view = st.segmented_control(
-        "Select View",
+        "Dashboard View",
         ["Overview", "Analytics", "Idea Management"],
         default="Overview",
         key="dashboard_view",
@@ -1992,7 +1992,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
             }, height="320px")
 
         with chart2:
-            # ── Project → Customer Hierarchy (sunburst, shows Idea Count + ROI) ──
+            # ── Project → Customer Hierarchy (grouped BAR chart — Idea Count per Customer per Project) ──
             st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Project → Customer Hierarchy</span>", unsafe_allow_html=True)
             project_customer_map = {}
             project_customer_roi = {}
@@ -2003,23 +2003,40 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
                 project_customer_map[project][customer] += 1
                 project_customer_roi.setdefault(project, {}).setdefault(customer, 0.0)
                 project_customer_roi[project][customer] += float(i.get("roi",0) or 0)
-            h_nodes = []
-            for project, customers in project_customer_map.items():
-                children = []
-                for customer, count in customers.items():
-                    roi = project_customer_roi.get(project, {}).get(customer, 0.0)
-                    children.append({"name": f"{customer} ({count}) · ROI {roi:.0f}", "value": count})
-                h_nodes.append({"name": f"{project} ({sum(customers.values())})", "children": children})
+
+            projects  = list(project_customer_map.keys())
+            customers = []
+            for pc in project_customer_map.values():
+                for c in pc.keys():
+                    if c not in customers:
+                        customers.append(c)
+
+            CUSTOMER_BAR_COLORS = {
+                "Rolls-Royce": "#1a4fad",
+                "Unknown": "#64748b",
+            }
+            series = []
+            for c in customers:
+                color = CUSTOMER_BAR_COLORS.get(c, "#0ea5e9")
+                series.append({
+                    "name": c,
+                    "type": "bar",
+                    "data": [project_customer_map.get(p, {}).get(c, 0) for p in projects],
+                    "itemStyle": {"color": color},
+                    "label": {"show": True, "position": "top", "fontSize": 9, "color": "#111827"},
+                })
+
             st_echarts({
-                "tooltip": {"trigger": "item", "formatter": "{b}"},
-                "series": [{
-                    "type": "sunburst",
-                    "data": h_nodes or [{"name": "No data", "value": 1}],
-                    "radius": ["10%", "75%"],
-                    "label": {"fontSize": 9, "color": "#ffffff"},
-                    "emphasis": {"focus": "ancestor"},
-                    "itemStyle": {"borderWidth": 1, "borderColor": "#0f172a"},
-                }]
+                "tooltip": {"trigger": "axis", "axisPointer": {"type": "shadow"}},
+                "legend": {"bottom": 0, "textStyle": {"fontSize": 9}},
+                "grid": {"left": "6%", "right": "4%", "top": "8%", "bottom": "18%", "containLabel": True},
+                "xAxis": {
+                    "type": "category",
+                    "data": projects,
+                    "axisLabel": {"rotate": 20, "fontSize": 9},
+                },
+                "yAxis": {"type": "value", "minInterval": 1},
+                "series": series,
             }, height="320px")
 
         with chart3:
