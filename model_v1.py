@@ -85,7 +85,6 @@ THEMES = {
     "Ocean Blue":         {"primary":"#1a4fad","secondary":"#0ea5e9","bg":"#f0f4ff","sidebar":"#0a0a0a"},
     "Forest Green":       {"primary":"#059669","secondary":"#0d9488","bg":"#f0fdf4","sidebar":"#0a0a0a"},
     "Purple Haze":        {"primary":"#7c3aed","secondary":"#a855f7","bg":"#faf5ff","sidebar":"#0a0a0a"},
-    "Midnight Dark":      {"primary":"#e2e8f0","secondary":"#94a3b8","bg":"#0f172a","sidebar":"#0a0a0a"},
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -465,9 +464,8 @@ def page_header(title: str):
 # ══════════════════════════════════════════════════════════════════════════════
 def apply_theme(theme_name):
     t = THEMES.get(theme_name, THEMES["ALTEN Red & Blue"])
-    dark_bg = theme_name == "Midnight Dark"
-    text_color = "#e2e8f0" if dark_bg else "#020202"
-    surface = "#1e293b" if dark_bg else "#ffffff"
+    text_color = "#020202"
+    surface = "#ffffff"
     st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -1388,8 +1386,7 @@ def _render_kanban_nesting_ui(ideas):
 # ══════════════════════════════════════════════════════════════════════════════
 def page_login():
     t = THEMES.get(ss("theme","ALTEN Red & Blue"), THEMES["ALTEN Red & Blue"])
-    dark_bg = ss("theme","") == "Midnight Dark"
-    surface = "#2a61b8" if dark_bg else "#CACDE3"
+    surface = "#CACDE3"
 
     if ss("_session_expired"):
         st.warning("⚠️ Session expired due to 5 minutes of inactivity. Please login again.")
@@ -2415,7 +2412,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
         }
         add_label_boxes(tree_data)
         st_echarts({
-            "backgroundColor":"#0B0B0D",
+            "backgroundColor":"transparent",
             "tooltip":{"trigger":"item","triggerOn":"mousemove"},
             "series":[{"type":"tree","data":[tree_data],
                        "top":"5%","left":"7%","bottom":"5%","right":"15%",
@@ -3750,14 +3747,6 @@ def main():
             if st.button("🚪 Logout"):
                 for k in ["email","role","name","theme"]: st.session_state.pop(k,None)
                 st.rerun()
-
-        st.divider()
-        st.markdown("**🎨 Theme**")
-        chosen = st.selectbox("", list(THEMES.keys()),
-                              index=list(THEMES.keys()).index(ss("theme","ALTEN Red & Blue")),
-                              label_visibility="collapsed", key="theme_sel")
-        if chosen != ss("theme"):
-            st.session_state["theme"] = chosen; st.rerun()
 
         st.markdown("---")
         st.markdown(
