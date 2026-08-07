@@ -49,11 +49,11 @@ BLOCKED_DOMAINS = {
 }
 
 ROLE_PAGES = {
-    "super user":         ["Dashboard","Submit Idea","PL Assignment","Feasibility","Approval","Admin","OTP List","Workflow","Deployed Tools"],
-    "normal user":        ["Submit Idea","Workflow"],
-    "automation engineer":["Dashboard","Submit Idea","Feasibility","Workflow","Deployed Tools"],
-    "automation pl":      ["Dashboard","Submit Idea","PL Assignment","Feasibility","Approval","Workflow","Deployed Tools"],
-    "pl/spl":             ["Dashboard","Submit Idea","Approval","Workflow","Deployed Tools"],
+    "super user":         ["Dashboard","Submit Idea","PL Assignment","Feasibility","Approval","Admin","OTP List","Deployed Tools"],
+    "normal user":        ["Dashboard","Submit Idea"],
+    "automation engineer":["Dashboard","Submit Idea","Feasibility","Deployed Tools"],
+    "automation pl":      ["Dashboard","Submit Idea","PL Assignment","Feasibility","Approval","Deployed Tools"],
+    "pl/spl":             ["Dashboard","Submit Idea","Approval","Deployed Tools"],
 }
 PW_ROLES = {"super user","automation engineer","automation pl","pl/spl"}
 
@@ -963,12 +963,12 @@ def _render_kpi_row(total, completed, completed_pct, cust_hrs, int_hrs, cust_roi
                             f"{completed_pct}% completion", "trophy",
                             count=completed, count_format="plain", uid="b",
                             spark="M0,24 C10,22 16,16 24,18 C32,20 38,12 48,14 C58,16 64,10 74,12 C82,13 90,8 100,9")
-        + _premium_kpi_html(f"{cust_hrs+int_hrs:,.0f}", "Total Projected Hrs Saved / yr",
-                            "#14b8a6", "#2dd4bf", "Customer + Internal hours", "clock",
+        + _premium_kpi_html(f"{cust_hrs+int_hrs:,.0f}", "Saved Hours",
+                            "#14b8a6", "#2dd4bf", "Hours saved per year", "clock",
                             count=cust_hrs+int_hrs, count_format="comma", uid="c",
                             spark="M0,20 C10,18 16,22 26,18 C36,14 44,16 54,12 C64,8 72,10 82,7 C90,5 96,6 100,4")
-        + _premium_kpi_html(cust_roi+int_roi, "Total ROI", "#c2410c", "#f97316",
-                            "Customer + Internal ROI", "growth",
+        + _premium_kpi_html(cust_roi+int_roi, "Saved ROI", "#c2410c", "#f97316",
+                            "Return on investment", "growth",
                             count=cust_roi+int_roi, count_format="decimal", uid="d",
                             spark="M0,26 C10,24 18,20 28,22 C38,24 46,16 56,18 C66,20 74,12 84,14 C92,15 97,10 100,8")
         + '</div>'
@@ -1886,7 +1886,7 @@ def page_dashboard():
     # ── VIEW SELECTOR (segmented control) ─────────────────────────────────
     dashboard_view = st.segmented_control(
         "Explore Views",
-        ["Overview", "Analytics", "Idea Management"],
+        ["Overview", "Analytics", "Idea Management", "Workflow"],
         default="Overview",
         key="dashboard_view",
     )
@@ -1966,7 +1966,7 @@ def page_dashboard():
     if dashboard_view == "Overview":
         # ── FILTER ROW (moved from original dashboard — kept in one row) ──
         with st.container(border=True):
-            fc1, fc2, fc3 = st.columns([1.0, 1.0, 1.0])
+            fc1, fc2, fc3, fc4 = st.columns([1.0, 1.0, 1.0, 0.5])
             with fc1:
                 f_cat = st.multiselect("Category", all_cats, key="f_cat",
                                        placeholder="All categories", label_visibility="collapsed")
@@ -1979,6 +1979,7 @@ def page_dashboard():
                 f_reg = st.multiselect("Region", all_regs, key="f_reg",
                                        placeholder="All regions", label_visibility="collapsed")
                 
+
                 
 
         # ── KPI METRICS (single horizontal row — enhanced: animated counters,
@@ -2315,7 +2316,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
                     "data": projects,
                     "axisLabel": {"rotate": 20, "fontSize": 9},
                 },
-                "yAxis": {"type": "value", "minInterval": 1},
+                "yAxis": {",type": "value", "minInterval": 1},
                 "series": series,
             }, height="320px")
 
@@ -2401,16 +2402,8 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
                  "children":[
                      {"name":f"Accepted ({cnt('WIP')+cnt('UAT')+cnt('Completed')})","itemStyle":{"color":"#059669"},
                       "children":[
-                          {"name":f"Customer ({cust_cnt})","itemStyle":{"color":"#00498F"},
-                           "children":[
-                               {"name":f"WIP ({cs('Customer Requirement','WIP')+cs('Customer Requirement','UAT')})","itemStyle":{"color":"#0d9488"}},
-                               {"name":f"Deployed ({cs('Customer Requirement','Completed')})","itemStyle":{"color":"#059669"}},
-                           ]},
-                          {"name":f"Internal ({int_cnt})","itemStyle":{"color":"#0ea5e9"},
-                           "children":[
-                               {"name":f"WIP ({cs('Internal','WIP')+cs('Internal','UAT')})","itemStyle":{"color":"#0d9488"}},
-                               {"name":f"Deployed ({cs('Internal','Completed')})","itemStyle":{"color":"#059669"}},
-                           ]},
+                          {"name":f"WIP ({cnt('WIP')+cnt('UAT')})","itemStyle":{"color":"#0d9488"}},
+                          {"name":f"Deployed ({cnt('Completed')})","itemStyle":{"color":"#059669"}},
                       ]},
                      {"name":f"Rejected ({cnt('Rejected')})","itemStyle":{"color":"#dc2626"},
                       "children":[
@@ -2499,6 +2492,227 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
         with st.container(border=True):
             st.markdown("##### 📋 Kanban Board")
             render_kanban_board(ideas)
+
+    # ══════════════════════════════════════════════════════════════════════
+    # PAGE 4 — WORKFLOW  (horizontal flow diagram — fits dashboard view)
+    # Moved from the sidebar "Workflow" page into the dashboard tab.
+    # ══════════════════════════════════════════════════════════════════════
+    elif dashboard_view == "Workflow":
+        _wf_html = """<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{background:#070b14;color:#e2e8f0;font-family:'Inter',sans-serif;overflow:hidden;}
+.wrap{width:100%;padding:8px;}
+.wf-title{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:800;margin-bottom:4px;
+  background:linear-gradient(100deg,#00D4FF,#8B5CF6 55%,#10B981);
+  -webkit-background-clip:text;background-clip:text;color:transparent;}
+.wf-sub{font-size:10px;color:#475569;margin-bottom:6px;}
+svg{width:100%;height:auto;display:block;}
+@keyframes gPulse{0%,100%{filter:drop-shadow(0 0 4px rgba(0,212,255,.3));}50%{filter:drop-shadow(0 0 12px rgba(0,212,255,.7));}}
+@keyframes vPulse{0%,100%{filter:drop-shadow(0 0 4px rgba(139,92,246,.3));}50%{filter:drop-shadow(0 0 12px rgba(139,92,246,.7));}}
+@keyframes gYPulse{0%,100%{filter:drop-shadow(0 0 4px rgba(16,185,129,.3));}50%{filter:drop-shadow(0 0 12px rgba(16,185,129,.7));}}
+</style></head><body>
+<div class="wrap">
+<div class="wf-title">🔄 EFS Turbo Drive — Automation Workflow</div>
+<div class="wf-sub">Agile · Sprint-based · Continuous Improvement &nbsp;|&nbsp; Sensitivity: C1-Internal</div>
+<svg id="wf" viewBox="0 0 1850 640" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <marker id="ab" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0.5 L0,6.5 L7,3.5z" fill="#00D4FF"/></marker>
+  <marker id="av" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0.5 L0,6.5 L7,3.5z" fill="#8B5CF6"/></marker>
+  <marker id="ag" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0.5 L0,6.5 L7,3.5z" fill="#10B981"/></marker>
+  <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0.5 L0,6.5 L7,3.5z" fill="#ef4444"/></marker>
+  <filter id="fb" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="fv" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="fg" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <linearGradient id="cylg" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%" stop-color="#021a30"/><stop offset="45%" stop-color="#0a2d4a"/><stop offset="100%" stop-color="#021a30"/>
+  </linearGradient>
+  <linearGradient id="loopg" x1="0%" y1="100%" x2="0%" y2="0%">
+    <stop offset="0%" stop-color="#8B5CF6"/><stop offset="50%" stop-color="#00D4FF"/><stop offset="100%" stop-color="#10B981"/>
+  </linearGradient>
+</defs>
+
+<!-- ═══════ ROW 1 — MAIN PIPELINE (left → right) ═══════ -->
+<!-- 1. Turbo Drive cylinder -->
+<g filter="url(#fb)" style="animation:gPulse 3s ease-in-out infinite;">
+  <ellipse cx="100" cy="95" rx="65" ry="16" fill="#0a2d4a" stroke="#00D4FF" stroke-width="1.8"/>
+  <rect x="35" y="95" width="130" height="60" fill="url(#cylg)"/>
+  <ellipse cx="100" cy="155" rx="65" ry="16" fill="#071824" stroke="rgba(0,212,255,.5)" stroke-width="1.5"/>
+  <line x1="35" y1="95" x2="35" y2="155" stroke="#00D4FF" stroke-width="1.8"/>
+  <line x1="165" y1="95" x2="165" y2="155" stroke="#00D4FF" stroke-width="1.8"/>
+  <text x="100" y="130" text-anchor="middle" font-family="Space Grotesk" font-size="15" font-weight="800" fill="#00D4FF">Turbo Drive</text>
+  <text x="100" y="148" text-anchor="middle" font-family="Inter" font-size="9" fill="rgba(0,212,255,.6)">IDEA INTAKE</text>
+</g>
+
+<!-- Arrow TD → Screening -->
+<line x1="180" y1="125" x2="228" y2="125" stroke="#00D4FF" stroke-width="2" marker-end="url(#ab)"/>
+<circle r="5" fill="#00D4FF"><animateMotion dur="1.4s" repeatCount="indefinite" path="M180,125 H228"/><animate attributeName="opacity" values="0;1;1;0" dur="1.4s" repeatCount="indefinite"/></circle>
+
+<!-- 2. Initial Screening -->
+<g filter="url(#fv)">
+  <rect x="230" y="90" width="180" height="70" rx="12" fill="#110e28" stroke="#8B5CF6" stroke-width="1.8"/>
+  <text x="320" y="118" text-anchor="middle" font-family="Space Grotesk" font-size="13" font-weight="700" fill="#c4b5fd">🔍 Initial Screening</text>
+  <text x="320" y="136" text-anchor="middle" font-family="Inter" font-size="9" fill="#64748b">PL/SPL Review · Category</text>
+</g>
+
+<!-- Arrow Screening → Approved? -->
+<line x1="410" y1="125" x2="478" y2="125" stroke="#8B5CF6" stroke-width="2" marker-end="url(#av)"/>
+
+<!-- 3. Approved? diamond -->
+<g filter="url(#fv)" style="animation:vPulse 3.5s ease-in-out infinite 0.5s;">
+  <polygon points="540,85 600,125 540,165 480,125" fill="#0e0b20" stroke="#8B5CF6" stroke-width="2"/>
+  <text x="540" y="121" text-anchor="middle" font-family="Space Grotesk" font-size="11" font-weight="700" fill="#e2e8f0">Approved?</text>
+  <text x="540" y="137" text-anchor="middle" font-family="Space Grotesk" font-size="9" fill="#8B5CF6">PL/SPL Gate</text>
+</g>
+
+<!-- Approved NO → Reject/Park 1 -->
+<path d="M480,165 V290 H390 V548" stroke="#ef4444" stroke-width="1.6" fill="none" stroke-dasharray="5 3" marker-end="url(#ar)" opacity=".8"/>
+<text x="430" y="205" font-family="Space Grotesk" font-size="9.5" font-weight="700" fill="#ef4444">NO</text>
+
+<!-- Approved YES → Business Impact -->
+<line x1="600" y1="125" x2="658" y2="125" stroke="#00D4FF" stroke-width="2" marker-end="url(#ab)"/>
+<text x="633" y="115" font-family="Space Grotesk" font-size="9" font-weight="700" fill="#10B981">YES</text>
+
+<!-- 4. Business Impact -->
+<g filter="url(#fb)">
+  <rect x="660" y="90" width="200" height="70" rx="12" fill="#061824" stroke="#00D4FF" stroke-width="1.8"/>
+  <text x="760" y="118" text-anchor="middle" font-family="Space Grotesk" font-size="13" font-weight="700" fill="#00D4FF">📊 Business Impact</text>
+  <text x="760" y="136" text-anchor="middle" font-family="Inter" font-size="9" fill="#64748b">Value · Complexity · Priority</text>
+</g>
+
+<!-- Arrow Business → VSM Required? -->
+<line x1="860" y1="125" x2="918" y2="125" stroke="#8B5CF6" stroke-width="2" marker-end="url(#av)"/>
+
+<!-- 5. VSM Required? diamond -->
+<g filter="url(#fv)" style="animation:vPulse 3.5s ease-in-out infinite 1s;">
+  <polygon points="980,85 1040,125 980,165 920,125" fill="#0e0b20" stroke="#8B5CF6" stroke-width="2"/>
+  <text x="980" y="121" text-anchor="middle" font-family="Space Grotesk" font-size="11" font-weight="700" fill="#e2e8f0">VSM</text>
+  <text x="980" y="137" text-anchor="middle" font-family="Space Grotesk" font-size="9" fill="#8B5CF6">Required?</text>
+</g>
+
+<!-- VSM YES → Workshop -->
+<path d="M980,165 V548" stroke="#10B981" stroke-width="1.7" fill="none" marker-end="url(#ag)" opacity=".85"/>
+<text x="1000" y="185" font-family="Space Grotesk" font-size="9" font-weight="700" fill="#10B981">YES</text>
+
+<!-- VSM NO → Feasibility -->
+<line x1="1040" y1="125" x2="1098" y2="125" stroke="#00D4FF" stroke-width="2" marker-end="url(#ab)"/>
+<text x="1070" y="115" font-family="Space Grotesk" font-size="9" font-weight="700" fill="#10B981">NO</text>
+
+<!-- 6. Feasibility -->
+<g filter="url(#fb)">
+  <rect x="1100" y="90" width="200" height="70" rx="12" fill="#061824" stroke="#00D4FF" stroke-width="1.8"/>
+  <text x="1200" y="118" text-anchor="middle" font-family="Space Grotesk" font-size="13" font-weight="700" fill="#00D4FF">📋 Feasibility Study</text>
+  <text x="1200" y="136" text-anchor="middle" font-family="Inter" font-size="9" fill="#64748b">ROI · Risk · Effort</text>
+</g>
+
+<!-- 7. Prioritization -->
+<g>
+  <rect x="1320" y="90" width="200" height="70" rx="12" fill="#0f0a1e" stroke="#8B5CF6" stroke-width="1.8"/>
+  <text x="1420" y="118" text-anchor="middle" font-family="Space Grotesk" font-size="13" font-weight="700" fill="#a78bfa">📌 Prioritization Matrix</text>
+  <text x="1420" y="136" text-anchor="middle" font-family="Inter" font-size="8.5" fill="#94a3b8">HIGH · MEDIUM · LOW</text>
+</g>
+
+<!-- Arrow Feasibility → Prioritization -->
+<line x1="1300" y1="125" x2="1318" y2="125" stroke="#00D4FF" stroke-width="2" marker-end="url(#ab)"/>
+
+<!-- 8. Management Approval diamond -->
+<g filter="url(#fv)" style="animation:vPulse 3.5s ease-in-out infinite 1.5s;">
+  <polygon points="1640,85 1700,125 1640,165 1580,125" fill="#0e0b20" stroke="#8B5CF6" stroke-width="2"/>
+  <text x="1640" y="118" text-anchor="middle" font-family="Space Grotesk" font-size="10" font-weight="700" fill="#e2e8f0">Mgmt</text>
+  <text x="1640" y="134" text-anchor="middle" font-family="Space Grotesk" font-size="9" fill="#8B5CF6">Approval</text>
+</g>
+
+<!-- Arrow Prioritization → Mgmt -->
+<line x1="1520" y1="125" x2="1578" y2="125" stroke="#8B5CF6" stroke-width="2" marker-end="url(#av)"/>
+
+<!-- Mgmt NO → Reject/Park 2 -->
+<path d="M1580,165 V300 H1640 V548" stroke="#ef4444" stroke-width="1.6" fill="none" stroke-dasharray="5 3" marker-end="url(#ar)" opacity=".8"/>
+<text x="1560" y="205" font-family="Space Grotesk" font-size="9.5" font-weight="700" fill="#ef4444">NO</text>
+
+<!-- Mgmt YES → Requirement Gathering (row 2) -->
+<path d="M1640,165 V280 H300 V318" stroke="#00D4FF" stroke-width="2" fill="none" marker-end="url(#ab)"/>
+<text x="1660" y="200" font-family="Space Grotesk" font-size="9.5" font-weight="700" fill="#10B981">YES</text>
+<circle r="5" fill="#00D4FF"><animateMotion dur="2.4s" repeatCount="indefinite" path="M1640,165 V280 H300 V318"/><animate attributeName="opacity" values="0;1;1;0" dur="2.4s" repeatCount="indefinite"/></circle>
+
+<!-- ═══════ ROW 2 — EXECUTION & DELIVERY ═══════ -->
+<!-- 9. Requirement Gathering -->
+<g filter="url(#fb)">
+  <rect x="200" y="320" width="200" height="80" rx="12" fill="#061824" stroke="#00D4FF" stroke-width="1.8"/>
+  <text x="300" y="350" text-anchor="middle" font-family="Space Grotesk" font-size="12" font-weight="700" fill="#00D4FF">📝 Requirement</text>
+  <text x="300" y="366" text-anchor="middle" font-family="Space Grotesk" font-size="12" font-weight="700" fill="#00D4FF">Gathering</text>
+  <text x="300" y="384" text-anchor="middle" font-family="Inter" font-size="8.5" fill="#64748b">User stories · Scope</text>
+</g>
+
+<!-- 10. Sprint Cycle -->
+<g filter="url(#fv)">
+  <rect x="500" y="320" width="520" height="80" rx="14" fill="rgba(139,92,246,.06)" stroke="#8B5CF6" stroke-width="1.8"/>
+  <text x="760" y="352" text-anchor="middle" font-family="Space Grotesk" font-size="13" font-weight="800" fill="#a78bfa">2-WEEK SPRINT CYCLE</text>
+  <text x="760" y="372" text-anchor="middle" font-family="Inter" font-size="9" fill="#64748b">Develop ↔ Plan &amp; design · SIT · Initiation → UAT</text>
+  <path d="M700,352 a30,30 0 1,1 -0.1,0" fill="none" stroke="#00D4FF" stroke-width="2" opacity=".8"/>
+  <path d="M820,352 a30,30 0 1,0 0.1,0" fill="none" stroke="#10B981" stroke-width="2" opacity=".8"/>
+  <text x="700" y="340" text-anchor="middle" font-family="Space Grotesk" font-size="8" fill="#00D4FF">Plan</text>
+  <text x="820" y="340" text-anchor="middle" font-family="Space Grotesk" font-size="8" fill="#10B981">Dev</text>
+</g>
+
+<!-- 11. Go Live -->
+<g filter="url(#fg)" style="animation:gYPulse 3s ease-in-out infinite;">
+  <rect x="1050" y="320" width="200" height="80" rx="12" fill="#061e14" stroke="#10B981" stroke-width="2"/>
+  <text x="1150" y="352" text-anchor="middle" font-family="Space Grotesk" font-size="13" font-weight="800" fill="#10B981">🚀 Go Live</text>
+  <text x="1150" y="372" text-anchor="middle" font-family="Inter" font-size="9" fill="#64748b">Deploy to production</text>
+</g>
+
+<!-- 12. Hypercare -->
+<g filter="url(#fb)">
+  <rect x="1300" y="320" width="200" height="80" rx="12" fill="#051825" stroke="#00D4FF" stroke-width="1.8"/>
+  <text x="1400" y="352" text-anchor="middle" font-family="Space Grotesk" font-size="13" font-weight="700" fill="#00D4FF">🛡️ Hypercare</text>
+  <text x="1400" y="372" text-anchor="middle" font-family="Inter" font-size="9" fill="#64748b">Monitor · Hotfixes</text>
+</g>
+
+<!-- 13. Benefits Tracking -->
+<g filter="url(#fb)">
+  <rect x="1550" y="320" width="200" height="80" rx="12" fill="#051825" stroke="#00D4FF" stroke-width="1.8"/>
+  <text x="1650" y="352" text-anchor="middle" font-family="Space Grotesk" font-size="12" font-weight="700" fill="#00D4FF">📈 Benefits Track</text>
+  <text x="1650" y="372" text-anchor="middle" font-family="Inter" font-size="9" fill="#64748b">KPI · Hrs saved · ROI</text>
+</g>
+
+<!-- Row 2 arrows -->
+<line x1="400" y1="360" x2="498" y2="360" stroke="#8B5CF6" stroke-width="2" marker-end="url(#av)"/>
+<line x1="1020" y1="360" x2="1048" y2="360" stroke="#10B981" stroke-width="2" marker-end="url(#ag)"/>
+<line x1="1250" y1="360" x2="1298" y2="360" stroke="#00D4FF" stroke-width="2" marker-end="url(#ab)"/>
+<line x1="1500" y1="360" x2="1548" y2="360" stroke="#00D4FF" stroke-width="2" marker-end="url(#ab)"/>
+
+<!-- ═══════ ROW 3 — BRANCHES ═══════ -->
+<!-- Reject/Park 1 -->
+<g filter="url(#fv)">
+  <rect x="310" y="550" width="160" height="60" rx="10" fill="#200a0a" stroke="#ef4444" stroke-width="1.6"/>
+  <text x="390" y="582" text-anchor="middle" font-family="Space Grotesk" font-size="12" font-weight="700" fill="#ef4444">✕ Reject / Park</text>
+</g>
+
+<!-- VSM Workshop -->
+<g filter="url(#fg)">
+  <rect x="880" y="550" width="200" height="60" rx="10" fill="#061e14" stroke="#10B981" stroke-width="1.8"/>
+  <text x="980" y="582" text-anchor="middle" font-family="Space Grotesk" font-size="12" font-weight="700" fill="#10B981">🧠 VSM Workshop</text>
+</g>
+<!-- Workshop → Feasibility (dashed rejoin) -->
+<path d="M1080,580 H1240 V162" stroke="#10B981" stroke-width="1.5" fill="none" stroke-dasharray="5 3" marker-end="url(#ab)" opacity=".7"/>
+
+<!-- Reject/Park 2 -->
+<g filter="url(#fv)">
+  <rect x="1560" y="550" width="160" height="60" rx="10" fill="#200a0a" stroke="#ef4444" stroke-width="1.6"/>
+  <text x="1640" y="582" text-anchor="middle" font-family="Space Grotesk" font-size="12" font-weight="700" fill="#ef4444">✕ Reject / Park</text>
+</g>
+
+<!-- ═══════ LOOP BACK — Continuous Improvement ═══════ -->
+<path d="M1650,400 V40 H100 V93" stroke="url(#loopg)" stroke-width="2.2" fill="none" stroke-dasharray="8 5" marker-end="url(#ag)" opacity=".7"/>
+<text x="875" y="28" text-anchor="middle" font-family="Space Grotesk" font-size="11" font-weight="700" letter-spacing="2" fill="rgba(139,92,246,.8)">🔄 CONTINUOUS IMPROVEMENT LOOP</text>
+<circle r="5.5" fill="#8B5CF6" opacity=".75"><animateMotion dur="6s" repeatCount="indefinite" path="M1650,400 V40 H100 V93"/><animate attributeName="opacity" values="0;.75;.75;0" dur="6s" repeatCount="indefinite"/></circle>
+
+</svg>
+</div>
+</body></html>
+        """
+        st.components.v1.html(_wf_html, height=560, scrolling=False)
 
     render_copyright()
 
