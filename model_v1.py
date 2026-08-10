@@ -2245,7 +2245,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
     elif dashboard_view == "Analytics":
         st.markdown("##### 📈 Analytics")
          # ── FILTER ROW (moved from original dashboard — kept in one row) ──
-                with st.container(border=True):
+with st.container(border=True):
                     fc1, fc2, fc3, fc4 = st.columns([1.0, 1.0, 1.0, 0.5])
                     with fc1:
                         f_cat = st.multiselect("Category", all_cats, key="f_cat",
