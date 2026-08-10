@@ -2258,10 +2258,10 @@ with st.container(border=True):
                     with fc3:
                         f_reg = st.multiselect("Region", all_regs, key="f_reg",
                                                placeholder="All regions", label_visibility="collapsed")
-        chart1, chart2, chart3 = st.columns([1, 1.2, 1])
+                    chart1, chart2, chart3 = st.columns([1, 1.2, 1])
         
 
-        with chart1:
+with chart1:
             # ── Status Pie (moved from original) ──
             st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Ideas by Status</span>", unsafe_allow_html=True)
             status_labels = [s for s in STATUSES]
