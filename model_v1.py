@@ -2243,22 +2243,38 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
     # PAGE 2 — ANALYTICS
     # ══════════════════════════════════════════════════════════════════════
     elif dashboard_view == "Analytics":
-        if dashboard_view == "Overview":
-        # ── FILTER ROW (moved from original dashboard — kept in one row) ──
-           with st.container(border=True):
-            fc1, fc2, fc3, fc4 = st.columns([1.0, 1.0, 1.0, 0.5])
-            with fc1:
-                f_cat = st.multiselect("Category", all_cats, key="f_cat",
-                                       placeholder="All categories", label_visibility="collapsed")
-                
-            with fc2:
-                f_pl  = st.multiselect("PL/SPL", all_pls, key="f_pl",
-                                       placeholder="All PLs", label_visibility="collapsed")
-                
-            with fc3:
-                f_reg = st.multiselect("Region", all_regs, key="f_reg",
-                                       placeholder="All regions", label_visibility="collapsed")
+        
         st.markdown("##### 📈 Analytics")
+        # ── FILTER ROW (same as Overview) ──
+with st.container(border=True):
+    fc1, fc2, fc3, fc4 = st.columns([1.0, 1.0, 1.0, 0.5])
+
+    with fc1:
+        f_cat = st.multiselect(
+            "Category",
+            all_cats,
+            key="analytics_f_cat",
+            placeholder="All categories",
+            label_visibility="collapsed"
+        )
+
+    with fc2:
+        f_pl = st.multiselect(
+            "PL/SPL",
+            all_pls,
+            key="analytics_f_pl",
+            placeholder="All PLs",
+            label_visibility="collapsed"
+        )
+
+    with fc3:
+        f_reg = st.multiselect(
+            "Region",
+            all_regs,
+            key="analytics_f_reg",
+            placeholder="All regions",
+            label_visibility="collapsed"
+        )
         
         chart1, chart2, chart3 = st.columns([1, 1.2, 1])
         
