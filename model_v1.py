@@ -68,9 +68,9 @@ def get_supabase() -> Client:
         </body>
         </html>"""
                 st.components.v1.html(_workflow_html, height=640, scrolling=True)
-        "pd":pd_name or "",
-        "spl_pl":spl_pl or "",
-    }
+                "pd":pd_name or "",
+                "spl_pl":spl_pl or "",
+                }
     existing = sb.table("otp_list").select("otp").eq("otp", payload["otp"]).execute()
     if existing.data:
         sb.table("otp_list").update(payload).eq("otp", payload["otp"]).execute()
