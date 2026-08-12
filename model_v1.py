@@ -2292,27 +2292,36 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
                 "Rolls-Royce": "#1a4fad",
                 "Unknown": "#64748b",
             }
+            # Sort projects by total ideas (high -> low) so the horizontal bars go top->bottom
+            project_totals = {p: sum(project_customer_map.get(p, {}).values()) for p in projects}
+            projects_sorted = sorted(projects, key=lambda p: project_totals.get(p, 0), reverse=True)
+
             series = []
             for c in customers:
                 color = CUSTOMER_BAR_COLORS.get(c, "#0ea5e9")
                 series.append({
                     "name": c,
                     "type": "bar",
-                    "data": [project_customer_map.get(p, {}).get(c, 0) for p in projects],
+                    "stack": "total",
+                    "data": [project_customer_map.get(p, {}).get(c, 0) for p in projects_sorted],
                     "itemStyle": {"color": color},
-                    "label": {"show": True, "position": "top", "fontSize": 9, "color": "#111827"},
+                    "label": {"show": True, "position": "right", "fontSize": 10, "color": "#111827"},
                 })
 
             st_echarts({
                 "tooltip": {"trigger": "axis", "axisPointer": {"type": "shadow"}},
                 "legend": {"bottom": 0, "textStyle": {"fontSize": 9}},
-                "grid": {"left": "6%", "right": "4%", "top": "8%", "bottom": "18%", "containLabel": True},
+                "grid": {"left": "6%", "right": "6%", "top": "8%", "bottom": "18%", "containLabel": True},
+                # Horizontal bars: categories on the Y axis
                 "xAxis": {
-                    "type": "category",
-                    "data": projects,
-                    "axisLabel": {"rotate": 20, "fontSize": 9},
+                    "type": "value",
+                    "minInterval": 1,
                 },
-                "yAxis": {",type": "value", "minInterval": 1},
+                "yAxis": {
+                    "type": "category",
+                    "data": projects_sorted,
+                    "axisLabel": {"fontSize": 10},
+                },
                 "series": series,
             }, height="320px")
 
@@ -2365,7 +2374,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
               .region-map-shell .region-subtitle {{font-size:12px;color:rgba(248,250,252,.72);}}
               .region-map-shell .region-highlight {{position:absolute;border-radius:999px;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(250,204,21,.55) 0%,rgba(250,204,21,.18) 55%,rgba(250,204,21,0) 75%);animation:region-pulse 2.4s ease-in-out infinite;pointer-events:none;z-index:2;}}
               @keyframes region-pulse {{0%,100% {{opacity:.75;}} 50% {{opacity:1;}}}}
-              .region-map-shell .region-pin {{position:absolute;transform:translate(-50%,-50%);font-size:13px;font-weight:800;color:#facc15;text-shadow:0 0 5px rgba(0,0,0,.95),0 0 2px rgba(0,0,0,.95);pointer-events:none;z-index:3;}}
+              .region-map-shell .region-pin {{position:absolute;transform:translate(-50%,-50%);font-size:13px;font-weight:800;color:#facc15;text-shadow:0 0 5px rgba(0,0,0,.95),0 0 2px rgba(0,0,0,.95);pointer-events:auto;cursor:pointer;z-index:3;}}
             </style>
             <div class="region-map-shell">
               <img class="region-map-bg" src="https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg" alt="World map" />
