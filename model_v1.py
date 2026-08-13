@@ -2292,9 +2292,9 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
                 "Rolls-Royce": "#1a4fad",
                 "Unknown": "#64748b",
             }
-            # Sort projects by total ideas (high -> low) so the horizontal bars go top->bottom
+            # Sort projects by total ideas (low -> high) so the horizontal bars go in opposite direction
             project_totals = {p: sum(project_customer_map.get(p, {}).values()) for p in projects}
-            projects_sorted = sorted(projects, key=lambda p: project_totals.get(p, 0), reverse=True)
+            projects_sorted = sorted(projects, key=lambda p: project_totals.get(p, 0), reverse=False)
 
             series = []
             for c in customers:
@@ -2352,34 +2352,66 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
                 return 90 + round((c / max_count) * 70) if c else 60
 
             REGION_POS = {
-                "India": {"top": "37.8%", "left": "71.9%"},
-                "USA": {"top": "28.3%", "left": "22.8%"},
-                "UK": {"top": "20.0%", "left": "49.4%"},
-                "Germany": {"top": "21.7%", "left": "52.8%"},
+                "India": {"cx": "620", "cy": "420"},
+                "USA": {"cx": "220", "cy": "280"},
+                "UK": {"cx": "490", "cy": "200"},
+                "Germany": {"cx": "530", "cy": "210"},
             }
             active_regions = {k: v for k, v in region_counts.items() if v > 0}
-            pins_html = "".join(
-                f'<div class="region-highlight" style="top:{REGION_POS[k]["top"]};left:{REGION_POS[k]["left"]};width:{_highlight_size(v)}px;height:{_highlight_size(v)}px;"></div>'
-                f'<div class="region-pin" style="top:{REGION_POS[k]["top"]};left:{REGION_POS[k]["left"]};" title="{k}: {v} idea(s)">{v}</div>'
-                for k, v in active_regions.items()
-            )
+            
+            # Build SVG circles for each region
+            region_circles = ""
+            region_labels = ""
+            for k, v in active_regions.items():
+                pos = REGION_POS.get(k, {})
+                cx = pos.get("cx", "0")
+                cy = pos.get("cy", "0")
+                radius = 30 + int((v / max_count) * 40) if v else 25
+                region_circles += f'<circle cx="{cx}" cy="{cy}" r="{radius}" fill="rgba(250,204,21,0.3)" stroke="#facc15" stroke-width="2" opacity="0.7"/>'
+                region_labels += f'<text x="{cx}" y="{int(cy)+5}" font-size="18" font-weight="bold" fill="#facc15" text-anchor="middle" font-family="Arial">{v}</text>'
 
             map_html = f"""
             <style>
               .region-map-shell {{position:relative;width:100%;aspect-ratio:1/1;max-height:320px;min-height:260px;border-radius:22px;overflow:hidden;background:#0b1222;border:1px solid rgba(255,255,255,.08);box-shadow:0 20px 50px rgba(0,0,0,.25);}}
-              .region-map-shell .region-map-bg {{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.85;filter:invert(1) brightness(1.6);z-index:0;}}
-              .region-map-shell .region-overlay {{position:relative;z-index:1;padding:16px;display:grid;grid-template-rows:auto 1fr;gap:12px;}}
-              .region-map-shell .region-header {{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:0 6px;}}
-              .region-map-shell .region-title {{font-size:14px;font-weight:700;color:#f8fafc;}}
-              .region-map-shell .region-subtitle {{font-size:12px;color:rgba(248,250,252,.72);}}
-              .region-map-shell .region-highlight {{position:absolute;border-radius:999px;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(250,204,21,.55) 0%,rgba(250,204,21,.18) 55%,rgba(250,204,21,0) 75%);animation:region-pulse 2.4s ease-in-out infinite;pointer-events:none;z-index:2;}}
-              @keyframes region-pulse {{0%,100% {{opacity:.75;}} 50% {{opacity:1;}}}}
-              .region-map-shell .region-pin {{position:absolute;transform:translate(-50%,-50%);font-size:13px;font-weight:800;color:#facc15;text-shadow:0 0 5px rgba(0,0,0,.95),0 0 2px rgba(0,0,0,.95);pointer-events:auto;cursor:pointer;z-index:3;}}
+              .region-map-shell svg {{width:100%;height:100%;display:block;}}
             </style>
             <div class="region-map-shell">
-              <img class="region-map-bg" src="https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg" alt="World map" />
-              <div class="region-overlay"><div class="region-header"><div><div class="region-title"></div><div class="region-subtitle"></div></div></div></div>
-              {pins_html}
+              <svg viewBox="0 0 960 600" xmlns="http://www.w3.org/2000/svg">
+                <!-- Hardcoded world map background -->
+                <defs>
+                  <pattern id="mapGrid" x="50" y="50" width="100" height="100" patternUnits="userSpaceOnUse">
+                    <path d="M 100 0 L 0 0 0 100" fill="none" stroke="rgba(100,150,180,0.15)" stroke-width="0.5"/>
+                  </pattern>
+                </defs>
+                <rect width="960" height="600" fill="url(#mapGrid)"/>
+                
+                <!-- Simplified landmass shapes (light background) -->
+                <g fill="rgba(148,163,184,0.2)" stroke="rgba(100,120,140,0.3)" stroke-width="0.5">
+                  <!-- USA -->
+                  <ellipse cx="220" cy="280" rx="80" ry="60"/>
+                  <!-- Europe -->
+                  <ellipse cx="500" cy="200" rx="80" ry="50"/>
+                  <!-- India -->
+                  <ellipse cx="620" cy="420" rx="45" ry="55"/>
+                  <!-- Asia -->
+                  <ellipse cx="700" cy="300" rx="100" ry="80"/>
+                  <!-- South America -->
+                  <ellipse cx="320" cy="420" rx="60" ry="80"/>
+                  <!-- Africa -->
+                  <ellipse cx="540" cy="380" rx="70" ry="90"/>
+                  <!-- Australia -->
+                  <ellipse cx="800" cy="480" rx="50" ry="60"/>
+                </g>
+                
+                <!-- Region markers with circles -->
+                {region_circles}
+                {region_labels}
+                
+                <!-- Region name labels -->
+                <text x="220" y="360" font-size="11" fill="rgba(148,163,184,0.6)" text-anchor="middle" font-family="Arial">USA</text>
+                <text x="500" y="270" font-size="11" fill="rgba(148,163,184,0.6)" text-anchor="middle" font-family="Arial">Europe</text>
+                <text x="620" y="490" font-size="11" fill="rgba(148,163,184,0.6)" text-anchor="middle" font-family="Arial">India</text>
+              </svg>
             </div>
             """
             st.markdown(map_html, unsafe_allow_html=True)
