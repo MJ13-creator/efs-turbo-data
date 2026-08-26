@@ -174,6 +174,7 @@ def init_db():
             created_date  text
         );
     """)
+    _run_sql(sb, "ALTER TABLE deployed_tools ADD COLUMN IF NOT EXISTS deployed_by_email text;")
 
     dh = generate_password_hash(DEFAULT_PW)
     for u in DEFAULT_USERS:
@@ -281,7 +282,7 @@ def get_deployed_tools():
     resp = get_supabase().table("deployed_tools").select("*").order("created_date", desc=True).execute()
     return resp.data or []
 
-def add_deployed_tool(tool_name, description, idea_id="", project="", deployed_by=""):
+def add_deployed_tool(tool_name, description, idea_id="", project="", deployed_by="", deployed_by_email=""):
     row = {
         "id": str(uuid.uuid4()),
         "tool_name": tool_name or "",
@@ -289,6 +290,7 @@ def add_deployed_tool(tool_name, description, idea_id="", project="", deployed_b
         "idea_id": idea_id or "",
         "project": project or "",
         "deployed_by": deployed_by or "",
+        "deployed_by_email": deployed_by_email or "",
         "created_date": datetime.now().strftime("%Y-%m-%d %H:%M"),
     }
     get_supabase().table("deployed_tools").insert(row).execute()
@@ -426,6 +428,22 @@ Date        : {fmt_d(mdate)} at {times.get(mtype,'')}
 Engineer    : {idea.get('assigned_engineer','-')}
 PL / SPL    : {idea.get('pl_name','-')}"""
     return outlook_link(recipients, f"[Turbo Drive] {titles.get(mtype,'Meeting')}: {idea.get('idea_name','')} — {fmt_d(mdate)}", body)
+
+def build_tool_feedback_outlook(tool, from_name):
+    body = f"""Feedback on a deployed tool.
+
+Tool Name   : {tool.get('tool_name','')}
+Description : {tool.get('description','')}
+Project     : {tool.get('project','-')}
+Deployed By : {tool.get('deployed_by','-')}
+
+From        : {from_name or '-'}
+
+--- Feedback ---
+(Write your feedback here)
+"""
+    to_email = tool.get("deployed_by_email","")
+    return outlook_link([to_email], f"[Turbo Drive] Feedback on Deployed Tool: {tool.get('tool_name','')}", body)
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  SHARED UI COMPONENTS
@@ -1912,11 +1930,11 @@ def page_dashboard():
         pass
 
     # ── FILTER BAR ────────────────────────────────────────────────────────
+    all_otps = sorted({r.get("otp","") for r in get_otp_list() if r.get("otp","")})
     all_pls  = sorted({i.get("pl_name","") for i in all_ideas_raw if i.get("pl_name","")})
     all_regs = sorted({i.get("region","")   for i in all_ideas_raw if i.get("region","")})
-    all_cats = CATEGORIES
 
-    for k in ["f_cat", "f_pl", "f_reg"]:
+    for k in ["f_otp", "f_pl", "f_reg"]:
         if k not in st.session_state:
             st.session_state[k] = []
 
@@ -1924,8 +1942,8 @@ def page_dashboard():
     with st.container(border=True):
         fc1, fc2, fc3, fc4 = st.columns([1.0, 1.0, 1.0, 0.5])
         with fc1:
-            st.multiselect("Category", all_cats, key="f_cat",
-                           placeholder="All categories", label_visibility="collapsed")
+            st.multiselect("OTP", all_otps, key="f_otp",
+                           placeholder="All OTPs", label_visibility="collapsed")
         with fc2:
             st.multiselect("PL/SPL", all_pls, key="f_pl",
                            placeholder="All PLs", label_visibility="collapsed")
@@ -1933,17 +1951,17 @@ def page_dashboard():
             st.multiselect("Region", all_regs, key="f_reg",
                            placeholder="All regions", label_visibility="collapsed")
 
-    f_cat = st.session_state.get("f_cat", [])
+    f_otp = st.session_state.get("f_otp", [])
     f_pl  = st.session_state.get("f_pl", [])
     f_reg = st.session_state.get("f_reg", [])
 
     # Apply filters — interlinked (all three narrow the same set)
     ideas = all_ideas_raw
-    if f_cat: ideas = [i for i in ideas if i.get("category","") in f_cat]
+    if f_otp: ideas = [i for i in ideas if i.get("otp","") in f_otp]
     if f_pl:  ideas = [i for i in ideas if i.get("pl_name","") in f_pl]
     if f_reg: ideas = [i for i in ideas if i.get("region","") in f_reg]
 
-    active_filters = bool(f_cat or f_pl or f_reg)
+    active_filters = bool(f_otp or f_pl or f_reg)
     if active_filters:
         st.caption(f"📌 Showing **{len(ideas)}** of **{len(all_ideas_raw)}** ideas after filters.")
 
@@ -2238,12 +2256,12 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
     # PAGE 2 — ANALYTICS
     # ══════════════════════════════════════════════════════════════════════
     elif dashboard_view == "Analytics":
-        
+
         st.markdown("##### 📈 Analytics")
-        
-        
+
+
         chart1, chart2, chart3 = st.columns([1, 1.2, 1])
-        
+
 
         with chart1:
             # ── Status Pie (moved from original) ──
@@ -2269,7 +2287,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
             }, height="320px")
 
         with chart2:
-            # ── Project → Customer Hierarchy (grouped BAR chart — Idea Count per Customer per Project) ──
+            # ── Project → Customer Hierarchy (nested PIE / sunburst chart) ──
             st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Project → Customer (Hierarchy)</span>", unsafe_allow_html=True)
             project_customer_map = {}
             project_customer_roi = {}
@@ -2281,52 +2299,40 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
                 project_customer_roi.setdefault(project, {}).setdefault(customer, 0.0)
                 project_customer_roi[project][customer] += float(i.get("roi",0) or 0)
 
-            projects  = list(project_customer_map.keys())
-            customers = []
-            for pc in project_customer_map.values():
-                for c in pc.keys():
-                    if c not in customers:
-                        customers.append(c)
-
-            CUSTOMER_BAR_COLORS = {
-                "Rolls-Royce": "#1a4fad",
-                "Unknown": "#64748b",
-            }
-            # Sort projects by total ideas (low -> high) so the horizontal bars go in opposite direction
-            project_totals = {p: sum(project_customer_map.get(p, {}).values()) for p in projects}
-            projects_sorted = sorted(projects, key=lambda p: project_totals.get(p, 0), reverse=False)
-
-            series = []
-            for c in customers:
-                color = CUSTOMER_BAR_COLORS.get(c, "#0ea5e9")
-                series.append({
-                    "name": c,
-                    "type": "bar",
-                    "stack": "total",
-                    "data": [project_customer_map.get(p, {}).get(c, 0) for p in projects_sorted],
-                    "itemStyle": {"color": color},
-                    "label": {"show": True, "position": "right", "fontSize": 10, "color": "#111827"},
+            PROJECT_RING_COLORS = ["#1a4fad","#7c3aed","#059669","#0d9488","#0ea5e9","#b45309","#dc2626","#0891b2"]
+            sunburst_data = []
+            for idx, (proj, cust_map) in enumerate(project_customer_map.items()):
+                children = [{"name": c, "value": v} for c, v in cust_map.items()]
+                sunburst_data.append({
+                    "name": proj,
+                    "itemStyle": {"color": PROJECT_RING_COLORS[idx % len(PROJECT_RING_COLORS)]},
+                    "children": children,
                 })
 
             st_echarts({
-                "tooltip": {"trigger": "axis", "axisPointer": {"type": "shadow"}},
-                "legend": {"bottom": 0, "textStyle": {"fontSize": 9}},
-                "grid": {"left": "6%", "right": "6%", "top": "8%", "bottom": "18%", "containLabel": True},
-                # Horizontal bars: categories on the Y axis
-                "xAxis": {
-                    "type": "value",
-                    "minInterval": 1,
-                },
-                "yAxis": {
-                    "type": "category",
-                    "data": projects_sorted,
-                    "axisLabel": {"fontSize": 10},
-                },
-                "series": series,
+                "tooltip": {"trigger": "item", "formatter": "{b}: {c} idea(s)"},
+                "series": [{
+                    "type": "sunburst",
+                    "radius": ["12%", "90%"],
+                    "center": ["50%", "50%"],
+                    "data": sunburst_data,
+                    "sort": None,
+                    "emphasis": {"focus": "ancestor"},
+                    "label": {"rotate": "radial", "fontSize": 9, "color": "#fff", "minAngle": 8},
+                    "levels": [
+                        {},
+                        {"r0": "12%", "r": "48%",
+                         "itemStyle": {"borderWidth": 2, "borderColor": "#fff"},
+                         "label": {"fontSize": 10, "fontWeight": 700}},
+                        {"r0": "48%", "r": "90%",
+                         "itemStyle": {"borderWidth": 1, "borderColor": "#fff"},
+                         "label": {"fontSize": 8}},
+                    ],
+                }]
             }, height="320px")
 
         with chart3:
-            # ── Region World Map (moved from original) ──
+            # ── Region World Map — auto-aligned choropleth (no manual coordinates) ──
             st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Region-World Map</span>", unsafe_allow_html=True)
             region_data = {}
             for i in ideas:
@@ -2346,75 +2352,86 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
                 "UK": region_data.get("UK", {"count":0})["count"],
                 "Germany": region_data.get("GERMANY", {"count":0})["count"],
             }
-            max_count = max(region_counts.values()) or 1
-
-            def _highlight_size(c):
-                return 90 + round((c / max_count) * 70) if c else 60
-
-            REGION_POS = {
-                "India": {"cx": "620", "cy": "420"},
-                "USA": {"cx": "220", "cy": "280"},
-                "UK": {"cx": "490", "cy": "200"},
-                "Germany": {"cx": "530", "cy": "210"},
+            region_roi = {
+                "India": round(region_data.get("INDIA", {"roi":0.0})["roi"], 1),
+                "USA": round(region_data.get("USA", {"roi":0.0})["roi"], 1),
+                "UK": round(region_data.get("UK", {"roi":0.0})["roi"], 1),
+                "Germany": round(region_data.get("GERMANY", {"roi":0.0})["roi"], 1),
             }
             active_regions = {k: v for k, v in region_counts.items() if v > 0}
-            
-            # Build SVG circles for each region
-            region_circles = ""
-            region_labels = ""
-            for k, v in active_regions.items():
-                pos = REGION_POS.get(k, {})
-                cx = pos.get("cx", "0")
-                cy = pos.get("cy", "0")
-                radius = 30 + int((v / max_count) * 40) if v else 25
-                region_circles += f'<circle cx="{cx}" cy="{cy}" r="{radius}" fill="rgba(250,204,21,0.3)" stroke="#facc15" stroke-width="2" opacity="0.7"/>'
-                region_labels += f'<text x="{cx}" y="{int(cy)+5}" font-size="18" font-weight="bold" fill="#facc15" text-anchor="middle" font-family="Arial">{v}</text>'
 
-            map_html = f"""
-            <style>
-              .region-map-shell {{position:relative;width:100%;aspect-ratio:1/1;max-height:320px;min-height:260px;border-radius:22px;overflow:hidden;background:#0b1222;border:1px solid rgba(255,255,255,.08);box-shadow:0 20px 50px rgba(0,0,0,.25);}}
-              .region-map-shell svg {{width:100%;height:100%;display:block;}}
-            </style>
-            <div class="region-map-shell">
-              <svg viewBox="0 0 960 600" xmlns="http://www.w3.org/2000/svg">
-                <!-- Hardcoded world map background -->
-                <defs>
-                  <pattern id="mapGrid" x="50" y="50" width="100" height="100" patternUnits="userSpaceOnUse">
-                    <path d="M 100 0 L 0 0 0 100" fill="none" stroke="rgba(100,150,180,0.15)" stroke-width="0.5"/>
-                  </pattern>
-                </defs>
-                <rect width="960" height="600" fill="url(#mapGrid)"/>
-                
-                <!-- Simplified landmass shapes (light background) -->
-                <g fill="rgba(148,163,184,0.2)" stroke="rgba(100,120,140,0.3)" stroke-width="0.5">
-                  <!-- USA -->
-                  <ellipse cx="220" cy="280" rx="80" ry="60"/>
-                  <!-- Europe -->
-                  <ellipse cx="500" cy="200" rx="80" ry="50"/>
-                  <!-- India -->
-                  <ellipse cx="620" cy="420" rx="45" ry="55"/>
-                  <!-- Asia -->
-                  <ellipse cx="700" cy="300" rx="100" ry="80"/>
-                  <!-- South America -->
-                  <ellipse cx="320" cy="420" rx="60" ry="80"/>
-                  <!-- Africa -->
-                  <ellipse cx="540" cy="380" rx="70" ry="90"/>
-                  <!-- Australia -->
-                  <ellipse cx="800" cy="480" rx="50" ry="60"/>
-                </g>
-                
-                <!-- Region markers with circles -->
-                {region_circles}
-                {region_labels}
-                
-                <!-- Region name labels -->
-                <text x="220" y="360" font-size="11" fill="rgba(148,163,184,0.6)" text-anchor="middle" font-family="Arial">USA</text>
-                <text x="500" y="270" font-size="11" fill="rgba(148,163,184,0.6)" text-anchor="middle" font-family="Arial">Europe</text>
-                <text x="620" y="490" font-size="11" fill="rgba(148,163,184,0.6)" text-anchor="middle" font-family="Arial">India</text>
-              </svg>
-            </div>
-            """
-            st.markdown(map_html, unsafe_allow_html=True)
+            # This map fetches real country boundary GeoJSON at render time and
+            # matches each country by name (fuzzy keyword match) to our region
+            # values — so pins/colours land exactly on the correct country
+            # automatically, with no hand-picked pixel coordinates involved.
+            _region_map_html = f"""<!DOCTYPE html>
+<html><head><meta charset="utf-8"/>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<style>
+  *{{margin:0;padding:0;box-sizing:border-box;}}
+  html,body{{background:transparent;font-family:'Inter',sans-serif;}}
+  #wmap{{width:100%;height:300px;border-radius:16px;overflow:hidden;background:#0b1222;}}
+  #wmap-msg{{color:#94a3b8;font-size:11px;padding:16px;text-align:center;}}
+</style></head>
+<body>
+<div id="wmap"><div id="wmap-msg">Loading map…</div></div>
+<script>
+  var valueByRegion = {json.dumps(region_counts)};
+  var roiByRegion   = {json.dumps(region_roi)};
+  var regionKeywords = {{
+    'India':   ['india'],
+    'USA':     ['united states', 'usa'],
+    'UK':      ['united kingdom', 'u.k.'],
+    'Germany': ['germany']
+  }};
+  fetch('https://cdn.jsdelivr.net/gh/apache/echarts-www@master/asset/map/json/world.json')
+    .then(function(r){{ return r.json(); }})
+    .then(function(geoJson){{
+      echarts.registerMap('world', geoJson);
+      var mapData = (geoJson.features || []).map(function(f){{
+        var nm = (f.properties && (f.properties.name || f.properties.NAME)) || '';
+        var lower = nm.toLowerCase();
+        var val = 0, roi = 0;
+        for (var key in regionKeywords) {{
+          if (regionKeywords[key].some(function(kw){{ return lower.indexOf(kw) >= 0; }})) {{
+            val = valueByRegion[key] || 0;
+            roi = roiByRegion[key] || 0;
+          }}
+        }}
+        return {{ name: nm, value: val, roi: roi }};
+      }});
+      var maxVal = Math.max.apply(null, Object.keys(valueByRegion).map(function(k){{return valueByRegion[k];}}).concat([1]));
+      document.getElementById('wmap').innerHTML = '';
+      var chart = echarts.init(document.getElementById('wmap'));
+      chart.setOption({{
+        backgroundColor: 'transparent',
+        tooltip: {{
+          trigger: 'item',
+          formatter: function(p){{
+            if (!p.value) return p.name;
+            return p.name + '<br/>Ideas: <b>' + p.value + '</b><br/>ROI: <b>' + (p.data.roi||0) + '</b>';
+          }}
+        }},
+        visualMap: {{
+          min: 0, max: maxVal, show: false,
+          inRange: {{ color: ['#111827', '#facc15'] }}
+        }},
+        series: [{{
+          type: 'map', map: 'world', roam: true, zoom: 1.15,
+          emphasis: {{ label: {{ show: false }}, itemStyle: {{ areaColor: '#fbbf24' }} }},
+          itemStyle: {{ areaColor: '#111827', borderColor: '#334155', borderWidth: 0.6 }},
+          data: mapData
+        }}]
+      }});
+      window.addEventListener('resize', function(){{ chart.resize(); }});
+    }})
+    .catch(function(err){{
+      document.getElementById('wmap-msg').textContent = 'Map data unavailable — check network access.';
+    }});
+</script>
+</body></html>"""
+            st.components.v1.html(_region_map_html, height=310, scrolling=False)
+
             if active_regions:
                 st.caption("📍 " + "  ·  ".join(f"**{k}**: {v} idea(s)" for k, v in active_regions.items()))
             else:
@@ -3578,10 +3595,14 @@ html,body{background:#070b14;color:#e2e8f0;font-family:'Inter',sans-serif;min-he
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  PAGE: DEPLOYED TOOLS  (tracker for tools/automations shipped to production)
+#  Everyone can VIEW and give feedback via email to the developing engineer.
+#  Add / Edit / Delete is restricted to the "automation engineer" role.
 # ══════════════════════════════════════════════════════════════════════════════
 def page_deployed_tools():
     page_header("Deployed Tools 🛠️")
-    st.caption("Track every tool / automation that has gone live — with a name and a short description of what it does.")
+    st.caption("Track every tool / automation that has gone live — with a name and a short description of what it does. Anyone can view and send feedback to the engineer; only Automation Engineers can add, edit, or delete entries.")
+
+    is_engineer = (user_role() == "automation engineer")
 
     all_ideas   = get_all()
     completed   = [i for i in all_ideas if i.get("status") == "Completed"]
@@ -3589,9 +3610,12 @@ def page_deployed_tools():
 
     tools = get_deployed_tools()
 
-    tab1, tab2 = st.tabs(["📋 Deployed Tools List", "➕ Add New Tool"])
+    tab_labels = ["📋 Deployed Tools List"]
+    if is_engineer:
+        tab_labels.append("➕ Add New Tool")
+    tabs = st.tabs(tab_labels)
 
-    with tab1:
+    with tabs[0]:
         st.markdown(f"**{len(tools)} tool(s) deployed**")
         search = st.text_input("🔎 Search tools", placeholder="Filter by tool name, description, project…", key="tool_search")
         filtered = tools
@@ -3600,7 +3624,7 @@ def page_deployed_tools():
             filtered = [t for t in tools if sl in (t.get("tool_name","")+t.get("description","")+t.get("project","")).lower()]
 
         if not filtered:
-            st.info("No deployed tools recorded yet — add one under **Add New Tool**.")
+            st.info("No deployed tools recorded yet." + (" Add one under **Add New Tool**." if is_engineer else " Check back later."))
         else:
             import pandas as pd
             df = pd.DataFrame([{
@@ -3616,7 +3640,7 @@ def page_deployed_tools():
             df.to_csv(csv_buf, index=False)
             st.download_button("⬇️ Download CSV", csv_buf.getvalue(), "deployed_tools.csv", "text/csv")
 
-            st.markdown("##### Manage entries")
+            st.markdown("##### Tool Details" + (" & Management" if is_engineer else ""))
             for t in filtered:
                 with st.expander(f"🛠️ {t.get('tool_name','(no name)')}"):
                     st.markdown(f"**Description:** {t.get('description','-')}")
@@ -3624,30 +3648,75 @@ def page_deployed_tools():
                     if t.get("idea_id"):
                         st.markdown(f"**Linked Idea:** {idea_lookup.get(t.get('idea_id'), '(idea not found)')}")
                     st.caption(f"Added: {t.get('created_date','-')}")
-                    if st.button("🗑 Delete", key=f"tool_del_{t.get('id')}"):
-                        delete_deployed_tool(t.get("id"))
-                        st.warning(f"Deleted: {t.get('tool_name','')}")
-                        st.rerun()
 
-    with tab2:
-        st.markdown("##### Add a newly deployed tool")
-        idea_options = [""] + [i["id"] for i in completed]
-        with st.form("add_tool_form", clear_on_submit=True):
-            tool_name   = st.text_input("Tool Name *", placeholder="e.g. Invoice Auto-Extractor")
-            description = st.text_area("Description *", placeholder="What does this tool do? What problem does it solve?")
-            project     = st.selectbox("Project (optional)", [""] + PROJECTS)
-            linked_idea = st.selectbox(
-                "Link to a Completed Idea (optional)", idea_options,
-                format_func=lambda x: "— none —" if not x else idea_lookup.get(x, x),
-            )
-            deployed_by = st.text_input("Deployed By (optional)", value=ss("name",""))
-            if st.form_submit_button("✅ Save Tool"):
-                if not tool_name.strip() or not description.strip():
-                    st.error("Tool Name and Description are required.")
-                else:
-                    add_deployed_tool(tool_name.strip(), description.strip(), linked_idea, project, deployed_by.strip())
-                    st.success(f"✅ Saved: {tool_name.strip()}")
-                    st.rerun()
+                    # ── Feedback via email — available to EVERY user ──────────
+                    if t.get("deployed_by_email"):
+                        fb_url = build_tool_feedback_outlook(t, ss("name",""))
+                        st.markdown(
+                            f'<a href="{fb_url}" target="_blank" class="outlook-btn" '
+                            f'style="background:#0ea5e9;">📧 Give Feedback to {t.get("deployed_by","the Engineer")}</a>',
+                            unsafe_allow_html=True,
+                        )
+                    else:
+                        st.caption("ℹ️ No engineer email on file for this tool — feedback link unavailable.")
+
+                    # ── Edit / Delete — ENGINEER ROLE ONLY ─────────────────────
+                    if is_engineer:
+                        st.markdown("---")
+                        st.caption("✏️ Edit this entry")
+                        with st.form(f"edit_tool_{t.get('id')}"):
+                            e_name = st.text_input("Tool Name", value=t.get("tool_name",""), key=f"etn_{t.get('id')}")
+                            e_desc = st.text_area("Description", value=t.get("description",""), key=f"ed_{t.get('id')}")
+                            e_proj = st.selectbox(
+                                "Project", [""] + PROJECTS,
+                                index=([""] + PROJECTS).index(t.get("project","")) if t.get("project","") in ([""] + PROJECTS) else 0,
+                                key=f"ep_{t.get('id')}",
+                            )
+                            ec1, ec2 = st.columns(2)
+                            with ec1:
+                                save_clicked = st.form_submit_button("💾 Save Changes", use_container_width=True)
+                            with ec2:
+                                delete_clicked = st.form_submit_button("🗑 Delete", use_container_width=True)
+                            if save_clicked:
+                                if not e_name.strip() or not e_desc.strip():
+                                    st.error("Tool Name and Description are required.")
+                                else:
+                                    update_deployed_tool(t.get("id"), {
+                                        "tool_name": e_name.strip(),
+                                        "description": e_desc.strip(),
+                                        "project": e_proj,
+                                    })
+                                    st.success("✅ Updated.")
+                                    st.rerun()
+                            if delete_clicked:
+                                delete_deployed_tool(t.get("id"))
+                                st.warning(f"Deleted: {t.get('tool_name','')}")
+                                st.rerun()
+
+    if is_engineer:
+        with tabs[1]:
+            st.markdown("##### Add a newly deployed tool")
+            idea_options = [""] + [i["id"] for i in completed]
+            with st.form("add_tool_form", clear_on_submit=True):
+                tool_name   = st.text_input("Tool Name *", placeholder="e.g. Invoice Auto-Extractor")
+                description = st.text_area("Description *", placeholder="What does this tool do? What problem does it solve?")
+                project     = st.selectbox("Project (optional)", [""] + PROJECTS)
+                linked_idea = st.selectbox(
+                    "Link to a Completed Idea (optional)", idea_options,
+                    format_func=lambda x: "— none —" if not x else idea_lookup.get(x, x),
+                )
+                deployed_by = st.text_input("Deployed By", value=ss("name",""), disabled=True)
+                deployed_by_email = st.text_input("Your Email (for feedback)", value=ss("email",""), disabled=True)
+                if st.form_submit_button("✅ Save Tool"):
+                    if not tool_name.strip() or not description.strip():
+                        st.error("Tool Name and Description are required.")
+                    else:
+                        add_deployed_tool(
+                            tool_name.strip(), description.strip(), linked_idea, project,
+                            deployed_by.strip(), deployed_by_email.strip(),
+                        )
+                        st.success(f"✅ Saved: {tool_name.strip()}")
+                        st.rerun()
 
     render_copyright()
 
