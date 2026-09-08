@@ -1631,9 +1631,8 @@ def page_login():
                         st.success("Welcome!")
                         st.rerun()
 
-        left, center, right = st.columns([1, 2, 1])
-        with center:
-        col1, col2 = st.columns(2)
+        sp1, col1, col2, sp2, sp3 = st.columns([2, 2, 2, 2, 2])
+
         with col1:
             if st.button("🔑 Change Password"):
                 st.session_state["_page_override"] = "change_password"; st.rerun()
