@@ -1646,12 +1646,12 @@ with col3:
 st.markdown("<br>", unsafe_allow_html=True)
 
 st.markdown(
-    f'<p style="font-size:clamp(9px,0.8vw,10px);text-align:center;color:#94a3b8;margin-top:6px;">'
-    f'For queries: <a href="mailto:{SUPPORT_EMAIL}" style="color:#00AMAIL}</a></p>',
-    unsafe_allow_html=True
-)
-
-render_copyright()
+            f'<p style="font-size:clamp(9px,0.8vw,10px);text-align:center;color:#94a3b8;margin-top:6px;">'
+            f'For queries: <a href="mailto:{SUPPORT_EMAIL}" style="color:#00AEEF;">'
+            f'{SUPPORT_NAME} — {SUPPORT_EMAIL}</a></p>',
+            unsafe_allow_html=True
+        )
+    render_copyright()
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  PAGE: REGISTER
