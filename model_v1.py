@@ -3935,7 +3935,7 @@ def page_admin():
 # ══════════════════════════════════════════════════════════════════════════════
 def main():
     st.set_page_config(page_title="Turbo Drive", page_icon="", layout="wide",
-                       initial_sidebar_state="expanded")
+                       initial_sidebar_state="collapsed")
     init_db()
     if "theme" not in st.session_state:
         st.session_state["theme"] = "ALTEN Red & Blue"
