@@ -1631,13 +1631,25 @@ def page_login():
                         st.success("Welcome!")
                         st.rerun()
 
-        col1, col2, col3 = st.columns(3)
-        with col2:
-            if st.button("🔑 Change Password"):
-                st.session_state["_page_override"] = "change_password"; st.rerun()
-        with col3:
-            if st.button("📝 Register"):
-                st.session_state["_page_override"] = "register"; st.rerun()
+pw_col, reg_col = st.columns(2, gap="small")
+
+with pw_col:
+    if st.button(
+        "🔑 Change Password",
+        help="Change Password",
+        use_container_width=True
+    ):
+        st.session_state["_page_override"] = "change_password"
+        st.rerun()
+
+with reg_col:
+    if st.button(
+        "📝 Register",
+        help="Register New User",
+        use_container_width=True
+    ):
+        st.session_state["_page_override"] = "register"
+        st.rerun()
 
         st.markdown(
             f'<p style="font-size:clamp(9px,0.8vw,10px);text-align:center;color:#94a3b8;margin-top:6px;">'
