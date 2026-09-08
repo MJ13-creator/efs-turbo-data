@@ -81,10 +81,10 @@ STATUS_ICONS = {
 }
 
 THEMES = {
-    "ALTEN Red & Blue":   {"primary":"#E30613","secondary":"#00AEEF","bg":"#f5f6fa","sidebar":"#0a0a0a"},
-    "Ocean Blue":         {"primary":"#1a4fad","secondary":"#0ea5e9","bg":"#f0f4ff","sidebar":"#0a0a0a"},
-    "Forest Green":       {"primary":"#059669","secondary":"#0d9488","bg":"#f0fdf4","sidebar":"#0a0a0a"},
-    "Purple Haze":        {"primary":"#7c3aed","secondary":"#a855f7","bg":"#faf5ff","sidebar":"#0a0a0a"},
+    "ALTEN Red & Blue":   {"primary":"#E30613","secondary":"#00AEEF","bg":"#f5f6fa","sidebar":"#f1f5f9"},
+    "Ocean Blue":         {"primary":"#1a4fad","secondary":"#0ea5e9","bg":"#f0f4ff","sidebar":"#f1f5f9"},
+    "Forest Green":       {"primary":"#059669","secondary":"#0d9488","bg":"#f0fdf4","sidebar":"#f1f5f9"},
+    "Purple Haze":        {"primary":"#7c3aed","secondary":"#a855f7","bg":"#faf5ff","sidebar":"#f1f5f9"},
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -399,12 +399,17 @@ Priority    : {queue_info.get('priority_label','') if queue_info else ''}"""
 def build_feasibility_outlook(idea, roi, vsm_date, queue_info):
     body = f"""Feasibility Study is complete — please review and provide GO / NO-GO decision.
 
+Idea ID     : {idea.get('id','')}
 Idea Name   : {idea.get('idea_name','')}
 Project     : {idea.get('project','')}
 Category    : {idea.get('category','')}
+Submitter   : {idea.get('name','')}
 Engineer    : {idea.get('assigned_engineer','')}
+PL / SPL    : {idea.get('pl_name','')}
+Feasibility Status : Submitted
 ROI         : {round(roi,2)}
 Priority    : {idea.get('priority_label','')}
+Submitted On: {datetime.now().strftime('%Y-%m-%d %H:%M')}
 VSM Date    : {fmt_d(vsm_date)} at 11:00 AM"""
     if queue_info:
         body += f"\nDelivery    : {fmt_d(queue_info['sprint_end'])}"
@@ -428,6 +433,17 @@ Date        : {fmt_d(mdate)} at {times.get(mtype,'')}
 Engineer    : {idea.get('assigned_engineer','-')}
 PL / SPL    : {idea.get('pl_name','-')}"""
     return outlook_link(recipients, f"[Turbo Drive] {titles.get(mtype,'Meeting')}: {idea.get('idea_name','')} — {fmt_d(mdate)}", body)
+
+def build_calendar_invite_link(subject, body, start_dt, end_dt, attendees):
+    """Build an Outlook Web calendar deep-link for a pre-filled invite."""
+    to = ",".join(e for e in attendees if is_email(e))
+    startdt = start_dt.strftime("%Y-%m-%dT%H:%M:%S")
+    enddt   = end_dt.strftime("%Y-%m-%dT%H:%M:%S")
+    return (
+        "https://outlook.office.com/calendar/0/deeplink/compose?"
+        f"subject={quote(subject)}&body={quote(body)}&startdt={quote(startdt)}"
+        f"&enddt={quote(enddt)}&to={quote(to)}&path=%2Fcalendar%2Faction%2Fcompose&rru=addevent"
+    )
 
 def build_tool_feedback_outlook(tool, from_name):
     body = f"""Feedback on a deployed tool.
@@ -488,18 +504,23 @@ def apply_theme(theme_name):
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     html,body,[data-testid="stApp"]{{
+        color-scheme:light !important;
         font-family:'Inter',sans-serif;
         background:{t['bg']} !important;
         color:{text_color};
         font-size:clamp(12px,1.1vw,15px);
     }}
-    [data-testid="stSidebar"]{{background:{t['sidebar']} !important;}}
-    [data-testid="stSidebar"] *{{color:#e2e8f0 !important;}}
+    [data-testid="stSidebar"]{{background:{t['sidebar']} !important;border-right:1px solid #e2e8f0;}}
+    [data-testid="stSidebar"] *{{color:#0f172a !important;}}
     [data-testid="stSidebar"] .stRadio label{{
         font-size:clamp(11px,1vw,14px);padding:6px 10px;border-radius:8px;
         transition:background .15s;cursor:pointer;
     }}
-    [data-testid="stSidebar"] .stRadio label:hover{{background:rgba(255,255,255,.1);}}
+    [data-testid="stSidebar"] .stRadio label:hover{{background:rgba(0,0,0,.05);}}
+    [data-baseweb="popover"] [data-baseweb="menu"],
+    [data-baseweb="popover"] ul[role="listbox"]{{background-color:#ffffff !important;}}
+    [data-baseweb="menu"] li,
+    ul[role="listbox"] li{{background-color:#ffffff !important;color:#0f172a !important;}}
 
     /* ── Force readable text for native Streamlit chrome on every theme ──
        Streamlit's own widgets (labels, captions, metrics, alerts, tabs,
@@ -558,10 +579,20 @@ def apply_theme(theme_name):
         font-weight:600;font-size:clamp(11px,1vw,13px);margin-top:8px;
     }}
     .stButton>button{{
-        background:linear-gradient(135deg,{t['primary']},{t['secondary']});
-        color:#fff;border:none;border-radius:8px;font-weight:600;padding:8px 20px;
+        background:#ffffff;color:#0f172a;
+        border:1.5px solid #cbd5e1;border-radius:8px;font-weight:600;padding:8px 20px;
+        transition:border-color .15s,box-shadow .15s;
     }}
-    .stButton>button:hover{{opacity:.88;}}
+    .stButton>button:hover{{
+        border-color:{t['primary']};box-shadow:0 2px 8px rgba(0,0,0,.08);
+        background:#ffffff;color:#0f172a;opacity:1;
+    }}
+    .stButton>button:focus:not(:active){{border-color:{t['primary']};color:#0f172a;}}
+    .stFormSubmitButton>button{{
+        background:#ffffff !important;color:#0f172a !important;
+        border:1.5px solid #cbd5e1 !important;border-radius:8px !important;font-weight:600 !important;
+    }}
+    .stFormSubmitButton>button:hover{{border-color:{t['primary']} !important;}}
     div[data-testid="stForm"]{{background:{surface};border-radius:12px;padding:12px;}}
     .login-box{{
         max-width:440px;margin:40px auto;background:{surface};border-radius:16px;
@@ -574,6 +605,11 @@ def apply_theme(theme_name):
         border:1px solid #e2e8f0;margin-bottom:10px;
         box-shadow:0 1px 4px rgba(0,0,0,.05);
     }}
+    [data-testid="stExpander"] summary{{white-space:normal !important;height:auto !important;line-height:1.4 !important;}}
+    [data-testid="stExpander"] summary p{{white-space:normal !important;}}
+    .dash-toprow{{margin-bottom:6px;}}
+    .dash-toprow [data-testid="stMultiSelect"] > div > div{{min-height:38px !important;}}
+    .dash-toprow [data-baseweb="select"]{{font-size:11px !important;}}
 
     /* Reset button in dashboard filter row — match the multiselect filter
        boxes (surface background, border, rounded format) so fc4 blends in */
@@ -1281,7 +1317,7 @@ def _render_kanban_card(idea, status, color, all_ideas, id_to_idea, depth=0):
     eng_name = eng.split("@")[0] if "@" in eng else (eng or "—")
     # Simple label: "Child Card" prefix for nested cards, card icon for top-level
     label_prefix = "↳ 📦 Child Card — " if depth > 0 else "📄 "
-    label = label_prefix + (idea.get("idea_name") or "No Name")[:26]
+    label = label_prefix + (idea.get("idea_name") or "No Name")
 
     with st.expander(label, expanded=False):
         parent_name = ""
@@ -1744,6 +1780,29 @@ def page_feasibility():
     all_ideas = get_all()
     assigned  = rank_ideas([i for i in all_ideas if i.get("status")=="Assigned"])
 
+    st.markdown("#### 📊 Engineer-wise Feasibility Line Items")
+    import pandas as pd
+    eng_rows = []
+    for i in [x for x in all_ideas if x.get("status") in ("Assigned", "WIP")]:
+        fd = i.get("feasibility_data", {}) or {}
+        draft = fd.get("_draft", {})
+        eng_rows.append({
+            "Engineer": ((i.get("assigned_engineer", "") or "-").split("@")[0]).replace(".", " ").title(),
+            "Idea": i.get("idea_name", ""),
+            "Category": i.get("category", ""),
+            "Status": i.get("status", "") + (" (Draft saved)" if draft else ""),
+            "Baseline (hrs)": fd.get("baseline_process_time", draft.get("baseline_process_time", "")),
+            "New Process (hrs)": fd.get("new_process_time", draft.get("new_process_time", "")),
+            "FTE": fd.get("fte", draft.get("fte", "")),
+            "Frequency": fd.get("freq", draft.get("freq", "")),
+            "ROI": round(float(i.get("roi", 0) or 0), 2),
+            "Priority": i.get("priority_label", ""),
+        })
+    if eng_rows:
+        st.dataframe(pd.DataFrame(eng_rows), use_container_width=True, hide_index=True, height=220)
+    else:
+        st.caption("No feasibility line items yet.")
+
     if not assigned:
         st.info("No ideas pending feasibility study.")
         render_copyright(); return
@@ -1759,29 +1818,57 @@ def page_feasibility():
         st.session_state.pop("_feas_outlook_url",None)
         st.session_state.pop("_feas_outlook_label",None)
 
+    if ss("_feas_invite_url"):
+        url = ss("_feas_invite_url"); lbl = ss("_feas_invite_label","")
+        st.markdown(f"""
+        <div class="idea-card" style="border-left:4px solid #7c3aed;">
+          📅 <b>Open the meeting invite in Outlook:</b><br>
+          <span style="color:#64748b;font-size:12px;">{lbl}</span><br>
+          <a href="{url}" target="_blank" class="outlook-btn" style="background:#7c3aed;">📅 Open Invite in Outlook</a>
+        </div>""", unsafe_allow_html=True)
+        st.session_state.pop("_feas_invite_url",None)
+        st.session_state.pop("_feas_invite_label",None)
+
     for idea in assigned:
+        fd = idea.get("feasibility_data", {}) or {}
+        draft = fd.get("_draft", {})
         with st.expander(f"💡 {idea.get('idea_name','(no name)')}  —  {idea.get('priority_label','')}"):
-            st.markdown(f"**Engineer:** {idea.get('assigned_engineer','-')}  |  "
-                        f"**PL/SPL:** {idea.get('pl_name','-')}  |  **Category:** {idea.get('category','-')}")
+            st.markdown(f"""
+            <div style="border-left:3px solid #1a4fad;padding:8px 12px;margin-bottom:10px;background:#f8fafc;border-radius:6px;">
+              <b>Idea ID:</b> {idea.get('id','')}<br>
+              <b>Submitted by:</b> {idea.get('name','-')} ({idea.get('submitter_email','-') or '-'})<br>
+              <b>Assigned Engineer:</b> {idea.get('assigned_engineer','-')}<br>
+              <b>PL / SPL:</b> {idea.get('pl_name','-')}<br>
+              <b>Category:</b> {idea.get('category','-')}
+            </div>""", unsafe_allow_html=True)
             if idea.get("delivery_date"):
                 st.caption(f"📅 Provisional delivery: {idea['delivery_date']}")
+            if draft:
+                st.caption("📝 A saved draft was found for this idea — the fields below are pre-filled from it.")
 
             with st.form(f"feas_{idea['id']}"):
                 st.markdown("##### ROI Calculator")
                 col1,col2,col3 = st.columns(3)
                 with col1:
-                    baseline = st.number_input("Baseline Process Time (hrs)", min_value=0.0, step=0.1, key=f"b_{idea['id']}")
+                    baseline = st.number_input("Baseline Process Time (hrs)", min_value=0.0, step=0.1,
+                                                value=float(draft.get("baseline_process_time", 0) or 0), key=f"b_{idea['id']}")
                 with col2:
-                    newp = st.number_input("New Process Time (hrs)", min_value=0.0, step=0.1, key=f"n_{idea['id']}")
+                    newp = st.number_input("New Process Time (hrs)", min_value=0.0, step=0.1,
+                                           value=float(draft.get("new_process_time", 0) or 0), key=f"n_{idea['id']}")
                 with col3:
-                    fte    = st.number_input("FTE Count", min_value=0.0, step=0.1, key=f"f_{idea['id']}")
+                    fte = st.number_input("FTE Count", min_value=0.0, step=0.1,
+                                          value=float(draft.get("fte", 0) or 0), key=f"f_{idea['id']}")
                 col4,col5 = st.columns(2)
                 with col4:
-                    eng_ef = st.number_input("Automation Effort (hrs)", min_value=0.01, step=0.5, value=1.0, key=f"e_{idea['id']}")
-                    freq     = st.selectbox("Frequency", list(FREQ_MULT.keys()), key=f"fr_{idea['id']}")
+                    eng_ef = st.number_input("Automation Effort (hrs)", min_value=0.01, step=0.5,
+                                             value=float(draft.get("eng", 1.0) or 1.0), key=f"e_{idea['id']}")
+                    freq_opts = list(FREQ_MULT.keys())
+                    freq_idx = freq_opts.index(draft["freq"]) if draft.get("freq") in freq_opts else 0
+                    freq = st.selectbox("Frequency", freq_opts, index=freq_idx, key=f"fr_{idea['id']}")
                 with col5:
-                    auto_cat = st.selectbox("Automation Category *", AUTO_CATS, key=f"ac_{idea['id']}")
-                comments = st.text_area("Comments / Observations", key=f"co_{idea['id']}")
+                    ac_idx = AUTO_CATS.index(draft["automation_category"]) if draft.get("automation_category") in AUTO_CATS else 0
+                    auto_cat = st.selectbox("Automation Category *", AUTO_CATS, index=ac_idx, key=f"ac_{idea['id']}")
+                comments = st.text_area("Comments / Observations", value=draft.get("comments", ""), key=f"co_{idea['id']}")
                 # Compute per-occurrence savings: baseline - new process time
                 per_occurrence = 0.0
                 if baseline and baseline > newp:
@@ -1789,7 +1876,24 @@ def page_feasibility():
                 annual_saved = per_occurrence * fte * FREQ_MULT.get(freq, FREQ_MULT["Daily"])
                 roi = round((annual_saved / eng_ef) if eng_ef else 0.0, 2)
                 st.info(f"📈 Computed ROI: **{roi}**  —  Savings per occurrence: {per_occurrence} hrs  —  Annual saved hrs: {annual_saved:,.1f}")
-                if st.form_submit_button("✅ Submit Feasibility & Notify PL via Outlook"):
+
+                bcol1, bcol2 = st.columns(2)
+                with bcol1:
+                    save_clicked = st.form_submit_button("💾 Save Draft", use_container_width=True)
+                with bcol2:
+                    submit_clicked = st.form_submit_button("✅ Submit Feasibility & Notify PL via Outlook", use_container_width=True)
+
+                if save_clicked:
+                    fd_next = dict(fd)
+                    fd_next["_draft"] = {
+                        "baseline_process_time": baseline, "new_process_time": newp, "fte": fte,
+                        "eng": eng_ef, "freq": freq, "automation_category": auto_cat, "comments": comments,
+                    }
+                    update_idea(idea["id"], {"feasibility_data": fd_next})
+                    st.success("💾 Draft saved — status stays **Assigned**. Come back anytime to finish and submit.")
+                    st.rerun()
+
+                if submit_clicked:
                     vsm_date = next_workday(date.today()+timedelta(days=1))
                     qi = compute_delivery(all_ideas, idea.get("assigned_engineer",""), {**idea,"roi":roi})
                     update_idea(idea["id"],{
@@ -1816,6 +1920,50 @@ def page_feasibility():
                         f"Notify PL/SPL ({idea.get('pl_name','')}) — Feasibility complete for {idea.get('idea_name','')}")
                     st.success(f"✅ Submitted. ROI: {roi} | VSM: {fmt_d(vsm_date)}. Click Outlook above to notify PL/SPL.")
                     st.rerun()
+
+            with st.expander("📅 Schedule a Meeting"):
+                participants_map = {
+                    "Idea Submitter": idea.get("submitter_email", ""),
+                    "Assigned Engineer": idea.get("assigned_engineer", ""),
+                    "PL / SPL": idea.get("pl_name", ""),
+                }
+                valid_participants = {k: v for k, v in participants_map.items() if is_email(v)}
+                if not valid_participants:
+                    st.caption("No valid participant emails on file for this idea yet.")
+                else:
+                    mcol1, mcol2, mcol3 = st.columns(3)
+                    with mcol1:
+                        m_date = st.date_input("Meeting Date", value=date.today()+timedelta(days=1), key=f"md_{idea['id']}")
+                    with mcol2:
+                        m_time = st.time_input("Meeting Time", key=f"mt_{idea['id']}")
+                    with mcol3:
+                        m_dur = st.selectbox("Duration (mins)", [15,30,45,60,90], index=1, key=f"mdur_{idea['id']}")
+                    m_attendees = st.multiselect("Participants", list(valid_participants.keys()),
+                                                  default=list(valid_participants.keys()), key=f"matt_{idea['id']}")
+                    m_remarks = st.text_area("Remarks", key=f"mrem_{idea['id']}", placeholder="Agenda / notes for this meeting")
+                    if st.button("📅 Schedule Meeting", key=f"msched_{idea['id']}"):
+                        if not m_attendees:
+                            st.error("Select at least one participant.")
+                        else:
+                            start_dt = datetime.combine(m_date, m_time)
+                            end_dt = start_dt + timedelta(minutes=int(m_dur))
+                            emails = [valid_participants[p] for p in m_attendees]
+                            body = f"""Meeting regarding: {idea.get('idea_name','')}
+
+Idea ID   : {idea.get('id','')}
+Category  : {idea.get('category','-')}
+Engineer  : {idea.get('assigned_engineer','-')}
+PL / SPL  : {idea.get('pl_name','-')}
+
+Remarks:
+{m_remarks or '-'}"""
+                            invite_url = build_calendar_invite_link(
+                                f"[Turbo Drive] Meeting — {idea.get('idea_name','')}", body, start_dt, end_dt, emails)
+                            st.session_state["_feas_invite_url"] = invite_url
+                            st.session_state["_feas_invite_label"] = (
+                                f"{fmt_d(m_date)} {m_time.strftime('%H:%M')} · {', '.join(m_attendees)}")
+                            st.success("Meeting invite ready — click 📅 Open Invite in Outlook above.")
+                            st.rerun()
     render_copyright()
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1898,20 +2046,39 @@ def page_approval():
 def page_dashboard():
     page_header("Dashboard ")
 
-    # ── VIEW SELECTOR (segmented control) ─────────────────────────────────
-    dashboard_view = st.segmented_control(
-        "Explore Views",
-        ["Overview", "Analytics", "Idea Management", "Workflow"],
-        default="Overview",
-        key="dashboard_view",
-    )
-
+    # ── DATA FIRST (filters need option lists before the row renders) ─────
     all_ideas_raw = get_all()
     if not all_ideas_raw:
         st.info("No ideas yet.")
         render_copyright(); return
 
-    # ── LIVE USER BADGE — top-right ───────────────────────────────────────
+    all_otps = sorted({r.get("otp","") for r in get_otp_list() if r.get("otp","")})
+    all_pls  = sorted({i.get("pl_name","") for i in all_ideas_raw if i.get("pl_name","")})
+    all_regs = sorted({i.get("region","")   for i in all_ideas_raw if i.get("region","")})
+
+    for k in ["f_otp", "f_pl", "f_reg"]:
+        if k not in st.session_state:
+            st.session_state[k] = []
+
+    # ── VIEW SELECTOR + COMPACT FILTERS — one dense row, no wasted space ──
+    st.markdown('<div class="dash-toprow">', unsafe_allow_html=True)
+    vc, fc1, fc2, fc3 = st.columns([1.7, 1, 1, 1])
+    with vc:
+        dashboard_view = st.segmented_control(
+            "Explore Views",
+            ["Overview", "Analytics", "Idea Management", "Workflow"],
+            default="Overview",
+            key="dashboard_view",
+        )
+    with fc1:
+        st.multiselect("OTP", all_otps, key="f_otp", placeholder="All OTPs", label_visibility="collapsed")
+    with fc2:
+        st.multiselect("PL/SPL", all_pls, key="f_pl", placeholder="All PLs", label_visibility="collapsed")
+    with fc3:
+        st.multiselect("Region", all_regs, key="f_reg", placeholder="All regions", label_visibility="collapsed")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # ── LIVE USER BADGE (registered/active counts, used elsewhere on page) ─
     users            = get_users()
     total_registered = len(users)
     active_count     = 1
@@ -1928,28 +2095,6 @@ def page_dashboard():
         active_count = len(resp.data or [])
     except Exception:
         pass
-
-    # ── FILTER BAR ────────────────────────────────────────────────────────
-    all_otps = sorted({r.get("otp","") for r in get_otp_list() if r.get("otp","")})
-    all_pls  = sorted({i.get("pl_name","") for i in all_ideas_raw if i.get("pl_name","")})
-    all_regs = sorted({i.get("region","")   for i in all_ideas_raw if i.get("region","")})
-
-    for k in ["f_otp", "f_pl", "f_reg"]:
-        if k not in st.session_state:
-            st.session_state[k] = []
-
-    # Persistent dashboard filter row (visible across all dashboard views)
-    with st.container(border=True):
-        fc1, fc2, fc3, fc4 = st.columns([1.0, 1.0, 1.0, 0.5])
-        with fc1:
-            st.multiselect("OTP", all_otps, key="f_otp",
-                           placeholder="All OTPs", label_visibility="collapsed")
-        with fc2:
-            st.multiselect("PL/SPL", all_pls, key="f_pl",
-                           placeholder="All PLs", label_visibility="collapsed")
-        with fc3:
-            st.multiselect("Region", all_regs, key="f_reg",
-                           placeholder="All regions", label_visibility="collapsed")
 
     f_otp = st.session_state.get("f_otp", [])
     f_pl  = st.session_state.get("f_pl", [])
@@ -3802,7 +3947,11 @@ def main():
                -webkit-background-clip:text;background-clip:text;color:transparent;">
              TURBO DRIVE
           </span>
-          <div style="color:#94a3b8;font-size:10px;margin-top:2px;">Automation Workflow</div>
+                    <div style="color:#64748b;font-size:10px;margin-top:2px;">Automation Workflow</div>
+                    <div style="margin-top:8px;line-height:1.35;">
+                        <div style="font-size:13px;font-weight:700;color:#0f172a;">{ss('name','')}</div>
+                        <div style="font-size:11px;color:#64748b;">{ss('role','')}</div>
+                    </div>
         </div>""", unsafe_allow_html=True)
         st.divider()
 
@@ -3816,11 +3965,6 @@ def main():
         current_page = nav.split(" ",1)[1].strip() if nav else pages[0]
 
         st.divider()
-        st.markdown(f"""
-        <div style="color:#94a3b8;font-size:12px;">
-          👤 <b style="color:#e2e8f0;">{ss('name','')}</b><br>
-          <span style="font-size:11px;">{ss('role','')}</span>
-        </div>""", unsafe_allow_html=True)
 
         # ── Small registered-users count badge (live from Supabase) ────────
         try:
@@ -3839,12 +3983,10 @@ def main():
         # (scoped to the sidebar only — ensures both Change Password and Logout match.)
         st.markdown("""
         <style>
-        [data-testid="stSidebar"] div.stButton > button {background-color:#000 !important; color:#fff !important; border: 1px solid #262626 !important; border-radius:6px !important; padding:6px 10px !important;}
-        [data-testid="stSidebar"] div.stButton > button:hover {opacity:0.85 !important;}
-        [data-testid="stSidebar"] div.stButton > button:first-of-type,
-        [data-testid="stSidebar"] div.stButton > button:nth-of-type(2) {background-color:#000 !important; color:#fff !important;}
-        [data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] > div {background-color:#000 !important; color:#fff !important; border: 1px solid #262626 !important; border-radius:6px !important;}
-        [data-testid="stSidebar"] [data-testid="stSelectbox"] svg {fill:#fff !important;}
+        [data-testid="stSidebar"] div.stButton > button {background-color:#ffffff !important; color:#0f172a !important; border: 1px solid #cbd5e1 !important; border-radius:6px !important; padding:6px 10px !important;}
+        [data-testid="stSidebar"] div.stButton > button:hover {border-color:#94a3b8 !important; opacity:1 !important;}
+        [data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] > div {background-color:#ffffff !important; color:#0f172a !important; border: 1px solid #cbd5e1 !important; border-radius:6px !important;}
+        [data-testid="stSidebar"] [data-testid="stSelectbox"] svg {fill:#0f172a !important;}
         </style>
         """, unsafe_allow_html=True)
 
