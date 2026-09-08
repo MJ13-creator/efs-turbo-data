@@ -1631,11 +1631,11 @@ def page_login():
                         st.success("Welcome!")
                         st.rerun()
 
-        col1, col2, col3, col4 = st.columns([1,1,1,1], gap="small")
-        with col2:
+        col1, col2,  = st.columns(2)
+        with col1:
             if st.button("🔑 Change Password"):
                 st.session_state["_page_override"] = "change_password"; st.rerun()
-        with col3:
+        with col2:
             if st.button("📝 Register"):
                 st.session_state["_page_override"] = "register"; st.rerun()
 
