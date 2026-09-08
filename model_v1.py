@@ -1631,33 +1631,27 @@ def page_login():
                         st.success("Welcome!")
                         st.rerun()
 
-pw_col, reg_col = st.columns(2, gap="small")
+col1, col2, col3 = st.columns(3)
 
-with pw_col:
-    if st.button(
-        "🔑 Change Password",
-        help="Change Password",
-        use_container_width=True
-    ):
+with col2:
+    if st.button("🔑 Change Password", use_container_width=True):
         st.session_state["_page_override"] = "change_password"
         st.rerun()
 
-with reg_col:
-    if st.button(
-        "📝 Register",
-        help="Register New User",
-        use_container_width=True
-    ):
+with col3:
+    if st.button("📝 Register", use_container_width=True):
         st.session_state["_page_override"] = "register"
         st.rerun()
 
-        st.markdown(
-            f'<p style="font-size:clamp(9px,0.8vw,10px);text-align:center;color:#94a3b8;margin-top:6px;">'
-            f'For queries: <a href="mailto:{SUPPORT_EMAIL}" style="color:#00AEEF;">'
-            f'{SUPPORT_NAME} — {SUPPORT_EMAIL}</a></p>',
-            unsafe_allow_html=True
-        )
-    render_copyright()
+st.markdown("<br>", unsafe_allow_html=True)
+
+st.markdown(
+    f'<p style="font-size:clamp(9px,0.8vw,10px);text-align:center;color:#94a3b8;margin-top:6px;">'
+    f'For queries: <a href="mailto:{SUPPORT_EMAIL}" style="color:#00AMAIL}</a></p>',
+    unsafe_allow_html=True
+)
+
+render_copyright()
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  PAGE: REGISTER
