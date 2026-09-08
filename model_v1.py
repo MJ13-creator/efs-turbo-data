@@ -1784,7 +1784,7 @@ def page_submit():
 #  PAGE: PL ASSIGNMENT  (+ engineer load bar chart top-right)
 # ══════════════════════════════════════════════════════════════════════════════
 def page_pl_assignment():
-    page_header("PL Assignment 🧑‍💼")
+    page_header("Automation Tracker 🧑‍💼")
 
     all_ideas = get_all()
     users     = get_users()
