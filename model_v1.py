@@ -586,11 +586,128 @@ def apply_theme(theme_name):
     [data-testid="stTextArea"] textarea,
     [data-testid="stNumberInput"] input,
     [data-testid="stDateInput"] input,
+    [data-testid="stTimeInput"] input,
     [data-testid="stSelectbox"] [data-baseweb="select"] > div,
     [data-testid="stMultiSelect"] [data-baseweb="select"] > div{{
         background-color:{surface} !important;color:{text_color} !important;
     }}
     [data-testid="stDataFrame"]{{color:{text_color};}}
+
+    /* ══════════════════════════════════════════════════════════════════
+       GLOBAL DESIGN SYSTEM — the Logout button is the single source of
+       truth. Every interactive control (buttons, dropdowns, inputs,
+       search fields, tabs, radios/segmented/chips) shares these tokens
+       for radius, height, border, typography, hover/focus/active/disabled
+       state and transition — so nothing in the app looks like it belongs
+       to a different product.
+       ══════════════════════════════════════════════════════════════════ */
+    :root{{
+        --ds-radius:8px;
+        --ds-height:40px;
+        --ds-border:1.5px solid #cbd5e1;
+        --ds-border-color:#cbd5e1;
+        --ds-font:'Inter',sans-serif;
+        --ds-font-size:13px;
+        --ds-font-weight:600;
+        --ds-transition:all .15s ease;
+        --ds-shadow-hover:0 2px 8px rgba(0,0,0,.08);
+        --ds-shadow-focus:0 0 0 3px color-mix(in srgb, {t['primary']} 18%, transparent);
+    }}
+    /* Buttons — Logout button's own look, now the base for every button */
+    .stButton>button, .stFormSubmitButton>button, .stDownloadButton>button{{
+        background:#ffffff !important;color:#0f172a !important;
+        border:var(--ds-border) !important;border-radius:var(--ds-radius) !important;
+        min-height:var(--ds-height) !important;
+        font-family:var(--ds-font) !important;font-size:var(--ds-font-size) !important;font-weight:var(--ds-font-weight) !important;
+        padding:8px 20px !important;transition:var(--ds-transition) !important;
+        box-shadow:none !important;
+    }}
+    .stButton>button:hover, .stFormSubmitButton>button:hover, .stDownloadButton>button:hover{{
+        border-color:{t['primary']} !important;box-shadow:var(--ds-shadow-hover) !important;
+        background:#ffffff !important;color:#0f172a !important;opacity:1 !important;
+    }}
+    .stButton>button:focus-visible, .stFormSubmitButton>button:focus-visible, .stDownloadButton>button:focus-visible{{
+        outline:none !important;border-color:{t['primary']} !important;box-shadow:var(--ds-shadow-focus) !important;
+    }}
+    .stButton>button:active, .stFormSubmitButton>button:active, .stDownloadButton>button:active{{
+        background:#f8fafc !important;border-color:{t['primary']} !important;
+    }}
+    .stButton>button:disabled, .stFormSubmitButton>button:disabled, .stDownloadButton>button:disabled{{
+        opacity:.5 !important;cursor:not-allowed !important;box-shadow:none !important;
+    }}
+    /* Dropdowns / selects / multiselects — same radius, height, border, type */
+    [data-testid="stSelectbox"] [data-baseweb="select"] > div,
+    [data-testid="stMultiSelect"] [data-baseweb="select"] > div{{
+        border:var(--ds-border) !important;border-radius:var(--ds-radius) !important;
+        min-height:var(--ds-height) !important;
+        font-family:var(--ds-font) !important;font-size:var(--ds-font-size) !important;
+        transition:var(--ds-transition) !important;
+    }}
+    [data-testid="stSelectbox"] [data-baseweb="select"]:hover > div,
+    [data-testid="stMultiSelect"] [data-baseweb="select"]:hover > div{{border-color:{t['primary']} !important;}}
+    [data-testid="stSelectbox"] [data-baseweb="select"]:focus-within > div,
+    [data-testid="stMultiSelect"] [data-baseweb="select"]:focus-within > div{{
+        border-color:{t['primary']} !important;box-shadow:var(--ds-shadow-focus) !important;
+    }}
+    /* Text / number / date / time inputs — including all search fields
+       (Admin search, Feasibility search, dashboard search, etc.) */
+    [data-testid="stTextInput"] input,
+    [data-testid="stTextArea"] textarea,
+    [data-testid="stNumberInput"] input,
+    [data-testid="stDateInput"] input,
+    [data-testid="stTimeInput"] input{{
+        border:var(--ds-border) !important;border-radius:var(--ds-radius) !important;
+        font-family:var(--ds-font) !important;font-size:var(--ds-font-size) !important;
+        transition:var(--ds-transition) !important;
+    }}
+    [data-testid="stTextInput"] input:hover, [data-testid="stTextArea"] textarea:hover,
+    [data-testid="stNumberInput"] input:hover, [data-testid="stDateInput"] input:hover,
+    [data-testid="stTimeInput"] input:hover{{border-color:{t['primary']} !important;}}
+    [data-testid="stTextInput"] input:focus, [data-testid="stTextArea"] textarea:focus,
+    [data-testid="stNumberInput"] input:focus, [data-testid="stDateInput"] input:focus,
+    [data-testid="stTimeInput"] input:focus{{
+        border-color:{t['primary']} !important;box-shadow:var(--ds-shadow-focus) !important;outline:none !important;
+    }}
+    [data-testid="stTextInput"] input:not([type]),
+    [data-testid="stTextInput"] input[type="text"],
+    [data-testid="stTextInput"] input[type="password"]{{min-height:calc(var(--ds-height) - 2px) !important;}}
+    /* Tabs — pill-style, same radius/border/hover language as buttons */
+    [data-testid="stTabs"] [data-baseweb="tab-list"]{{gap:6px !important;border-bottom:1.5px solid #e2e8f0 !important;}}
+    [data-testid="stTabs"] [data-baseweb="tab"]{{
+        border-radius:var(--ds-radius) var(--ds-radius) 0 0 !important;
+        font-family:var(--ds-font) !important;font-weight:var(--ds-font-weight) !important;
+        font-size:var(--ds-font-size) !important;transition:var(--ds-transition) !important;
+    }}
+    [data-testid="stTabs"] [data-baseweb="tab"]:hover{{background:rgba(0,0,0,.03) !important;}}
+    [data-testid="stTabs"] [aria-selected="true"]{{border-bottom-color:{t['primary']} !important;}}
+    [data-testid="stTabs"] [aria-selected="true"] p{{color:{t['primary']} !important;}}
+    /* Radios / segmented controls / chips — same rounded, bordered language */
+    [data-testid="stRadio"] label,
+    [data-testid="stSegmentedControl"] label{{
+        border-radius:var(--ds-radius) !important;
+        font-family:var(--ds-font) !important;font-size:var(--ds-font-size) !important;
+        transition:var(--ds-transition) !important;
+    }}
+    [data-testid="stSegmentedControl"] div[role="radiogroup"]{{
+        border:var(--ds-border) !important;border-radius:var(--ds-radius) !important;overflow:hidden;
+    }}
+    [data-testid="stSegmentedControl"] label[aria-checked="true"]{{
+        background:{t['primary']} !important;color:#ffffff !important;
+    }}
+    [data-testid="stSegmentedControl"] label[aria-checked="true"] p{{color:#ffffff !important;}}
+    input:disabled, textarea:disabled, [data-baseweb="select"][aria-disabled="true"]{{opacity:.5 !important;}}
+
+    /* ── Uniform page content alignment (every page, sidebar excluded) ──
+       One shared block-container padding so headers, filters, tables and
+       cards all start from the exact same horizontal position no matter
+       which page is open — no page gets its own custom offset. */
+    [data-testid="stAppViewContainer"] .main .block-container,
+    [data-testid="stMainBlockContainer"]{{
+        padding-left:2.2rem !important;
+        padding-right:2.2rem !important;
+        padding-top:1.6rem !important;
+        max-width:100% !important;
+    }}
 
     h1{{
         background:linear-gradient(135deg,{t['primary']},{t['secondary']});
@@ -616,21 +733,6 @@ def apply_theme(theme_name):
         padding:8px 18px;border-radius:8px;text-decoration:none;
         font-weight:600;font-size:clamp(11px,1vw,13px);margin-top:8px;
     }}
-    .stButton>button{{
-        background:#ffffff;color:#0f172a;
-        border:1.5px solid #cbd5e1;border-radius:8px;font-weight:600;padding:8px 20px;
-        transition:border-color .15s,box-shadow .15s;
-    }}
-    .stButton>button:hover{{
-        border-color:{t['primary']};box-shadow:0 2px 8px rgba(0,0,0,.08);
-        background:#ffffff;color:#0f172a;opacity:1;
-    }}
-    .stButton>button:focus:not(:active){{border-color:{t['primary']};color:#0f172a;}}
-    .stFormSubmitButton>button{{
-        background:#ffffff !important;color:#0f172a !important;
-        border:1.5px solid #cbd5e1 !important;border-radius:8px !important;font-weight:600 !important;
-    }}
-    .stFormSubmitButton>button:hover{{border-color:{t['primary']} !important;}}
     div[data-testid="stForm"]{{background:{surface};border-radius:12px;padding:12px;}}
     .login-box{{
         max-width:440px;margin:40px auto;background:{surface};border-radius:16px;
@@ -646,15 +748,15 @@ def apply_theme(theme_name):
     [data-testid="stExpander"] summary{{white-space:normal !important;height:auto !important;line-height:1.4 !important;}}
     [data-testid="stExpander"] summary p{{white-space:normal !important;}}
     .dash-toprow{{margin-bottom:6px;}}
-    .dash-toprow [data-testid="stMultiSelect"] > div > div{{min-height:38px !important;}}
+    .dash-toprow [data-testid="stMultiSelect"] > div > div{{min-height:40px !important;}}
     .dash-toprow [data-baseweb="select"]{{font-size:11px !important;}}
     /* Pixel-perfect baseline: segmented control + multiselects share one
        row height and vertically center within their column. */
     .dash-toprow [data-testid="stHorizontalBlock"]{{align-items:center !important;}}
     .dash-toprow [data-testid="stSegmentedControl"]{{margin-top:0 !important;}}
-    .dash-toprow [data-testid="stSegmentedControl"] div[role="radiogroup"]{{min-height:38px !important;}}
+    .dash-toprow [data-testid="stSegmentedControl"] div[role="radiogroup"]{{min-height:40px !important;}}
     .dash-toprow [data-testid="stSegmentedControl"] label{{
-        min-height:38px !important;display:flex !important;align-items:center !important;
+        min-height:40px !important;display:flex !important;align-items:center !important;
         padding-top:0 !important;padding-bottom:0 !important;
     }}
 
@@ -1828,9 +1930,31 @@ def page_feasibility():
     all_ideas = get_all()
     assigned  = rank_ideas([i for i in all_ideas if i.get("status")=="Assigned"])
 
+    # ── Unified search — filters BOTH the engineer-wise line-items table
+    #    and the idea cards ("ENG Rows") below from one input, in real time.
+    search_query = st.text_input(
+        "Search Feasibility",
+        key="feasibility_search",
+        placeholder="Search by Email ID, Employee Name, Project Name, Request ID, Status…",
+        label_visibility="collapsed",
+    )
+    q = search_query.strip().lower()
+
+    def _feas_search_blob(i):
+        fd = i.get("feasibility_data", {}) or {}
+        draft = fd.get("_draft", {}) if isinstance(fd, dict) else {}
+        return " ".join(str(x) for x in [
+            i.get("id",""), i.get("idea_name",""), i.get("name",""), i.get("submitter_email",""),
+            i.get("project",""), i.get("category",""), i.get("status",""), i.get("assigned_engineer",""),
+            i.get("pl_name",""), i.get("priority_label",""), i.get("automation_category",""),
+            fd.get("freq",""), draft.get("freq",""),
+        ]).lower()
+
     st.markdown("#### 📊 Engineer-wise Feasibility Line Items")
     import pandas as pd
     line_item_ideas = [x for x in all_ideas if x.get("status") in ("Assigned", "WIP")]
+    if q:
+        line_item_ideas = [i for i in line_item_ideas if q in _feas_search_blob(i)]
     engineer_options = sorted({
         ((i.get("assigned_engineer", "") or "-").split("@")[0]).replace(".", " ").title()
         for i in line_item_ideas
@@ -1862,12 +1986,20 @@ def page_feasibility():
         })
     if eng_rows:
         st.dataframe(pd.DataFrame(eng_rows), use_container_width=True, hide_index=True, height=220)
+    elif q:
+        st.caption("No feasibility line items match your search.")
     else:
         st.caption("No feasibility line items yet.")
 
     if not assigned:
         st.info("No ideas pending feasibility study.")
         render_copyright(); return
+
+    if q:
+        assigned = [i for i in assigned if q in _feas_search_blob(i)]
+        if not assigned:
+            st.warning("No idea cards match your search.")
+            render_copyright(); return
 
     if ss("_feas_outlook_url"):
         url = ss("_feas_outlook_url"); lbl = ss("_feas_outlook_label","")
@@ -4097,9 +4229,10 @@ def main():
         # (scoped to the sidebar only — ensures both Change Password and Logout match.)
         st.markdown("""
         <style>
-        [data-testid="stSidebar"] div.stButton > button {background-color:#ffffff !important; color:#0f172a !important; border: 1px solid #cbd5e1 !important; border-radius:6px !important; padding:6px 10px !important;}
-        [data-testid="stSidebar"] div.stButton > button:hover {border-color:#94a3b8 !important; opacity:1 !important;}
-        [data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] > div {background-color:#ffffff !important; color:#0f172a !important; border: 1px solid #cbd5e1 !important; border-radius:6px !important;}
+        [data-testid="stSidebar"] div.stButton > button {background-color:#ffffff !important; color:#0f172a !important; border:1.5px solid #cbd5e1 !important; border-radius:8px !important; min-height:40px !important; padding:8px 20px !important; font-family:'Inter',sans-serif !important; font-size:13px !important; font-weight:600 !important; transition:all .15s ease !important;}
+        [data-testid="stSidebar"] div.stButton > button:hover {border-color:#E30613 !important; box-shadow:0 2px 8px rgba(0,0,0,.08) !important; opacity:1 !important;}
+        [data-testid="stSidebar"] div.stButton > button:active {background-color:#f8fafc !important; border-color:#E30613 !important;}
+        [data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] > div {background-color:#ffffff !important; color:#0f172a !important; border:1.5px solid #cbd5e1 !important; border-radius:8px !important; min-height:40px !important;}
         [data-testid="stSidebar"] [data-testid="stSelectbox"] svg {fill:#0f172a !important;}
         /* PW / Logout row: plain, evenly-spaced buttons — no column "block"
            borders or backgrounds, consistent on desktop/tablet/mobile. */
