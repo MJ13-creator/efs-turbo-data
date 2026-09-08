@@ -1782,12 +1782,26 @@ def page_feasibility():
 
     st.markdown("#### 📊 Engineer-wise Feasibility Line Items")
     import pandas as pd
+    line_item_ideas = [x for x in all_ideas if x.get("status") in ("Assigned", "WIP")]
+    engineer_options = sorted({
+        ((i.get("assigned_engineer", "") or "-").split("@")[0]).replace(".", " ").title()
+        for i in line_item_ideas
+    })
+    selected_engineers = st.multiselect(
+        "Automation Engineer",
+        engineer_options,
+        placeholder="All automation engineers",
+        key="feasibility_engineer_filter",
+    )
     eng_rows = []
-    for i in [x for x in all_ideas if x.get("status") in ("Assigned", "WIP")]:
+    for i in line_item_ideas:
+        engineer_name = ((i.get("assigned_engineer", "") or "-").split("@")[0]).replace(".", " ").title()
+        if selected_engineers and engineer_name not in selected_engineers:
+            continue
         fd = i.get("feasibility_data", {}) or {}
         draft = fd.get("_draft", {})
         eng_rows.append({
-            "Engineer": ((i.get("assigned_engineer", "") or "-").split("@")[0]).replace(".", " ").title(),
+            "Engineer": engineer_name,
             "Idea": i.get("idea_name", ""),
             "Category": i.get("category", ""),
             "Status": i.get("status", "") + (" (Draft saved)" if draft else ""),
