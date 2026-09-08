@@ -43,7 +43,7 @@ AI_CATS         = ["AI-Personal Productivity","AI-Process Improvement","AI-Defin
 AUTO_CATS  = AUTOMATION_CATS + AI_CATS   # kept for feasibility dropdown (flat list)
 FREQ_MULT  = {"Daily":260,"Weekly":52,"Monthly":12,"Yearly":1}
 REJ_REASONS= ["Technical Rejection","Business Rejection"]
-ROLES_LIST = ["super user","normal user","automation engineer","automation pl","pl/spl"]
+ROLES_LIST = ["Super user","Normal user","Automation engineer","Automation pl","PL/SPL"]
 # Manual Type: how a user record was provisioned. Kept as a plain list (not
 # an enum) so new types can be appended later without a migration.
 MANUAL_TYPES = ["Manual", "Self-Registered", "Bulk Import", "System Default"]
@@ -64,10 +64,10 @@ BLOCKED_DOMAINS = {
 }
 
 ROLE_PAGES = {
-    "super user":         ["Dashboard","Submit Idea","PL Assignment","Feasibility","Approval","Admin","OTP List","Deployed Tools"],
+    "super user":         ["Dashboard","Submit Idea","Automation Tracker","Feasibility","Approval","Admin","OTP List","Deployed Tools"],
     "normal user":        ["Dashboard","Submit Idea"],
     "automation engineer":["Dashboard","Submit Idea","Feasibility","Deployed Tools"],
-    "automation pl":      ["Dashboard","Submit Idea","PL Assignment","Feasibility","Approval","Deployed Tools"],
+    "automation pl":      ["Dashboard","Submit Idea","Automation Tracker","Feasibility","Approval","Deployed Tools"],
     "pl/spl":             ["Dashboard","Submit Idea","Approval","Deployed Tools"],
 }
 PW_ROLES = {"super user","automation engineer","automation pl","pl/spl"}
@@ -4202,7 +4202,7 @@ def main():
         st.divider()
 
         pages = user_pages()
-        icons = {"Dashboard":"📊","Submit Idea":"💡","PL Assignment":"🧑‍💼",
+        icons = {"Dashboard":"📊","Submit Idea":"💡","Automation Tracker":"🧑‍💼",
                  "Feasibility":"🔍","Approval":"✅","Admin":"⚙️","OTP List":"🆔","Workflow":"🔀",
                  "Deployed Tools":"🛠️"}
         nav = st.radio("Navigation",
@@ -4264,7 +4264,7 @@ def main():
 
     if   current_page == "Dashboard":     page_dashboard()
     elif current_page == "Submit Idea":   page_submit()
-    elif current_page == "PL Assignment": page_pl_assignment()
+    elif current_page == "Automation Tracker": page_pl_assignment()
     elif current_page == "Feasibility":   page_feasibility()
     elif current_page == "Approval":      page_approval()
     elif current_page == "OTP List":      page_otp_list()
