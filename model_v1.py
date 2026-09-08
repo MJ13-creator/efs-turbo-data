@@ -44,6 +44,9 @@ AUTO_CATS  = AUTOMATION_CATS + AI_CATS   # kept for feasibility dropdown (flat l
 FREQ_MULT  = {"Daily":260,"Weekly":52,"Monthly":12,"Yearly":1}
 REJ_REASONS= ["Technical Rejection","Business Rejection"]
 ROLES_LIST = ["super user","normal user","automation engineer","automation pl","pl/spl"]
+# Manual Type: how a user record was provisioned. Kept as a plain list (not
+# an enum) so new types can be appended later without a migration.
+MANUAL_TYPES = ["Manual", "Self-Registered", "Bulk Import", "System Default"]
 DEFAULT_PW = "admin123"
 
 SUPPORT_NAME  = "Manoj JAGADEESH, Raja AMMAIAPPAN, Naveen KONNUR"
@@ -164,6 +167,7 @@ def init_db():
     for col, dtype in idea_cols:
         _run_sql(sb, f"ALTER TABLE ideas ADD COLUMN IF NOT EXISTS {col} {dtype};")
     _run_sql(sb, "ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash text;")
+    _run_sql(sb, "ALTER TABLE users ADD COLUMN IF NOT EXISTS manual_type text;")
 
     _run_sql(sb, """
         CREATE TABLE IF NOT EXISTS otp_list (
@@ -193,7 +197,7 @@ def init_db():
         try:
             existing = sb.table("users").select("email,password_hash").eq("email", u["email"].lower()).execute()
             if not existing.data:
-                sb.table("users").insert({"email":u["email"].lower(),"role":u["role"],"password_hash":dh}).execute()
+                sb.table("users").insert({"email":u["email"].lower(),"role":u["role"],"password_hash":dh,"manual_type":"System Default"}).execute()
             elif not existing.data[0].get("password_hash"):
                 sb.table("users").update({"password_hash":dh}).eq("email",u["email"].lower()).execute()
         except Exception:
@@ -241,20 +245,23 @@ def get_users():
     resp = get_supabase().table("users").select("*").order("email").execute()
     return resp.data or []
 
-def add_user(email, role):
+def add_user(email, role, manual_type="Manual"):
     sb  = get_supabase()
     dh  = generate_password_hash(DEFAULT_PW)
     existing = sb.table("users").select("password_hash").eq("email",email.lower()).execute()
     if existing.data:
-        sb.table("users").update({"role":role}).eq("email",email.lower()).execute()
+        sb.table("users").update({"role":role,"manual_type":manual_type}).eq("email",email.lower()).execute()
     else:
-        sb.table("users").insert({"email":email.lower(),"role":role,"password_hash":dh}).execute()
+        sb.table("users").insert({"email":email.lower(),"role":role,"password_hash":dh,"manual_type":manual_type}).execute()
 
 def delete_user(email):
     get_supabase().table("users").delete().eq("email",email.lower()).execute()
 
 def update_role(email, role):
     get_supabase().table("users").update({"role":role}).eq("email",email.lower()).execute()
+
+def update_manual_type(email, manual_type):
+    get_supabase().table("users").update({"manual_type":manual_type}).eq("email",email.lower()).execute()
 
 def set_password(email, new_pw):
     get_supabase().table("users").update({"password_hash":generate_password_hash(new_pw)}).eq("email",email.lower()).execute()
@@ -515,13 +522,32 @@ def apply_theme(theme_name):
     st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    /* ══════════════════════════════════════════════════════════════════
+       FORCE LIGHT THEME — GLOBALLY, REGARDLESS OF OS/BROWSER APPEARANCE
+       `color-scheme:light` stops the browser from auto-darkening native
+       form controls (scrollbars, date pickers, etc.) when Windows/Chrome/
+       Edge appearance is set to Dark. Applied on :root as well as html/body
+       so it wins before any other stylesheet loads.
+       ══════════════════════════════════════════════════════════════════ */
+    :root, html, body, [data-testid="stApp"]{{color-scheme:light !important;}}
     html,body,[data-testid="stApp"]{{
-        color-scheme:light !important;
         font-family:'Inter',sans-serif;
         background:{t['bg']} !important;
         color:{text_color};
         font-size:clamp(12px,1.1vw,15px);
     }}
+    [data-testid="stAppViewContainer"],
+    [data-testid="stBottomBlockContainer"]{{background:{t['bg']} !important;color:{text_color} !important;}}
+    [data-testid="stHeader"]{{background:transparent !important;}}
+    [data-testid="stToolbar"], [data-testid="stToolbar"] *{{color:{text_color} !important;}}
+    [data-testid="stDecoration"]{{background:linear-gradient(90deg,{t['primary']},{t['secondary']}) !important;}}
+    /* Any modal/dialog/popover (BaseWeb-based) stays light no matter what */
+    div[data-baseweb="modal"], div[data-baseweb="modal"] *,
+    div[data-testid="stDialog"], div[data-testid="stDialog"] *{{
+        background-color:#ffffff !important;color:{text_color} !important;
+    }}
+    ::-webkit-scrollbar{{background:#f1f5f9;}}
+    ::-webkit-scrollbar-thumb{{background:#cbd5e1;border-radius:8px;}}
     [data-testid="stSidebar"]{{background:{t['sidebar']} !important;border-right:1px solid #e2e8f0;}}
     [data-testid="stSidebar"] *{{color:#0f172a !important;}}
     [data-testid="stSidebar"] .stRadio label{{
@@ -622,6 +648,15 @@ def apply_theme(theme_name):
     .dash-toprow{{margin-bottom:6px;}}
     .dash-toprow [data-testid="stMultiSelect"] > div > div{{min-height:38px !important;}}
     .dash-toprow [data-baseweb="select"]{{font-size:11px !important;}}
+    /* Pixel-perfect baseline: segmented control + multiselects share one
+       row height and vertically center within their column. */
+    .dash-toprow [data-testid="stHorizontalBlock"]{{align-items:center !important;}}
+    .dash-toprow [data-testid="stSegmentedControl"]{{margin-top:0 !important;}}
+    .dash-toprow [data-testid="stSegmentedControl"] div[role="radiogroup"]{{min-height:38px !important;}}
+    .dash-toprow [data-testid="stSegmentedControl"] label{{
+        min-height:38px !important;display:flex !important;align-items:center !important;
+        padding-top:0 !important;padding-bottom:0 !important;
+    }}
 
     /* Reset button in dashboard filter row — match the multiselect filter
        boxes (surface background, border, rounded format) so fc4 blends in */
@@ -1536,7 +1571,8 @@ def page_register():
                     st.error("This email is already registered — please log in.")
                 else:
                     get_supabase().table("users").insert({
-                        "email":email.lower(),"role":"normal user","password_hash":generate_password_hash(pw)
+                        "email":email.lower(),"role":"normal user","password_hash":generate_password_hash(pw),
+                        "manual_type":"Self-Registered"
                     }).execute()
                     st.success("✅ Registered! You can now log in.")
     if st.button("← Back to Login"):
@@ -2086,7 +2122,11 @@ def page_dashboard():
         if k not in st.session_state:
             st.session_state[k] = []
 
-    # ── VIEW SELECTOR + COMPACT FILTERS — one dense row, no wasted space ──
+    # ── VIEW SELECTOR + COMPACT FILTERS — one dense, baseline-aligned row ──
+    # Both the segmented control and the multiselects have their own labels
+    # collapsed so nothing pushes one control lower than the others; a single
+    # shared caption above the row keeps the "Explore Views" context.
+    st.caption("Explore Views & Filters")
     st.markdown('<div class="dash-toprow">', unsafe_allow_html=True)
     vc, fc1, fc2, fc3 = st.columns([1.7, 1, 1, 1])
     with vc:
@@ -2095,6 +2135,7 @@ def page_dashboard():
             ["Overview", "Analytics", "Idea Management", "Workflow"],
             default="Overview",
             key="dashboard_view",
+            label_visibility="collapsed",
         )
     with fc1:
         st.multiselect("OTP", all_otps, key="f_otp", placeholder="All OTPs", label_visibility="collapsed")
@@ -2165,10 +2206,14 @@ def page_dashboard():
     if dashboard_view == "Overview":
         # ── KPI METRICS (single horizontal row — enhanced: animated counters,
         #    gradient top accent bars, mini sparklines, glass sweep, hover focus) ──
-        with st.container(border=True):
-            _render_kpi_row(total, completed, completed_pct, cust_hrs, int_hrs, cust_roi, int_roi)
+        # No st.container(border=True) here on purpose — that bordered
+        # container was the source of the visible black outline around the
+        # KPI cards; the cards already carry their own soft glass shadow.
+        _render_kpi_row(total, completed, completed_pct, cust_hrs, int_hrs, cust_roi, int_roi)
 
-        # ── AUTOMATION & AI CATEGORY BREAKDOWN (canvas resized to 380) ─────
+        # ── AUTOMATION & AI CATEGORY BREAKDOWN (pulled up right under the
+        #    KPI row now that the bordered-container gap is gone) ──────────
+        st.markdown('<div style="margin-top:-10px;"></div>', unsafe_allow_html=True)
         st.markdown("##### 🤖 Automation & AI Category Breakdown")
         auto_total_ideas = len([i for i in ideas if i.get("automation_category") in AUTOMATION_CATS])
         ai_total_ideas   = len([i for i in ideas if i.get("automation_category") in AI_CATS])
@@ -3901,7 +3946,35 @@ def page_admin():
 
     with tab1:
         st.markdown(f"**{len(users)} registered users**")
-        for u in users:
+
+        # ── Search by Email ID + Manual Type filter (compact row, same
+        #    styling/spacing as the rest of the app's filter controls) ──────
+        scol1, scol2 = st.columns([2, 1])
+        with scol1:
+            email_search = st.text_input(
+                "Search by Email ID", key="admin_email_search",
+                placeholder="Search by Email ID...", label_visibility="collapsed",
+            )
+        with scol2:
+            manual_type_filter = st.selectbox(
+                "Manual Type", ["All Manual Types"] + MANUAL_TYPES,
+                key="admin_manual_type_filter", label_visibility="collapsed",
+            )
+
+        filtered_users = users
+        if email_search:
+            q = email_search.strip().lower()
+            filtered_users = [u for u in filtered_users if q in u["email"].lower()]
+        if manual_type_filter != "All Manual Types":
+            filtered_users = [u for u in filtered_users if (u.get("manual_type") or "Manual") == manual_type_filter]
+
+        if email_search or manual_type_filter != "All Manual Types":
+            st.caption(f"📌 Showing **{len(filtered_users)}** of **{len(users)}** users after filters.")
+
+        if not filtered_users:
+            st.info("No users match the current search/filter.")
+
+        for u in filtered_users:
             with st.expander(f"📧 {u['email']}  —  {u['role']}"):
                 col1,col2,col3 = st.columns([2,2,1])
                 with col1:
@@ -3915,14 +3988,29 @@ def page_admin():
                     if st.button("🗑 Delete", key=f"del_{u['email']}"):
                         delete_user(u["email"]); st.warning("User deleted.")
 
+                mcol1, mcol2 = st.columns([2,1])
+                with mcol1:
+                    cur_mt = u.get("manual_type") or "Manual"
+                    new_manual_type = st.selectbox(
+                        "Manual Type", MANUAL_TYPES,
+                        index=MANUAL_TYPES.index(cur_mt) if cur_mt in MANUAL_TYPES else 0,
+                        key=f"mtype_{u['email']}",
+                    )
+                with mcol2:
+                    st.write("")
+                    if st.button("💾 Update Manual Type", key=f"updmt_{u['email']}"):
+                        update_manual_type(u["email"], new_manual_type)
+                        st.success("Manual Type updated.")
+
     with tab2:
         with st.form("add_user_form", clear_on_submit=True):
             new_email = st.text_input("Email")
             new_role  = st.selectbox("Role", ROLES_LIST)
+            new_manual_type = st.selectbox("Manual Type", MANUAL_TYPES)
             if st.form_submit_button("➕ Add User"):
                 if new_email:
-                    add_user(new_email.strip().lower(), new_role)
-                    st.success(f"Added {new_email} as {new_role} (default pw: {DEFAULT_PW})")
+                    add_user(new_email.strip().lower(), new_role, new_manual_type)
+                    st.success(f"Added {new_email} as {new_role} · {new_manual_type} (default pw: {DEFAULT_PW})")
                     st.rerun()
 
     with tab3:
@@ -4013,17 +4101,13 @@ def main():
         [data-testid="stSidebar"] div.stButton > button:hover {border-color:#94a3b8 !important; opacity:1 !important;}
         [data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] > div {background-color:#ffffff !important; color:#0f172a !important; border: 1px solid #cbd5e1 !important; border-radius:6px !important;}
         [data-testid="stSidebar"] [data-testid="stSelectbox"] svg {fill:#0f172a !important;}
+        /* PW / Logout row: plain, evenly-spaced buttons — no column "block"
+           borders or backgrounds, consistent on desktop/tablet/mobile. */
+        .sidebar-action-row [data-testid="stHorizontalBlock"]{gap:8px !important;}
+        .sidebar-action-row [data-testid="column"]{background:transparent !important;border:none !important;padding:0 !important;}
+        .sidebar-action-row div.stButton > button{width:100% !important;margin:0 !important;}
         </style>
         """, unsafe_allow_html=True)
-
-        col1,col2 = st.columns(2)
-        with col1:
-            if st.button("🔑 PW", help="Change Password"):
-                st.session_state["_page_override"] = "change_password"; st.rerun()
-        with col2:
-            if st.button("🚪 Logout"):
-                for k in ["email","role","name","theme"]: st.session_state.pop(k,None)
-                st.rerun()
 
         st.markdown("---")
         st.markdown(
@@ -4031,6 +4115,19 @@ def main():
             f'<a href="mailto:{SUPPORT_EMAIL}" style="color:#00AEEF;">{SUPPORT_NAME}</a></p>',
             unsafe_allow_html=True
         )
+
+        # PW & Logout live below "Queries?" as one evenly-spaced horizontal
+        # row — plain buttons, not boxed/bordered column blocks.
+        st.markdown('<div class="sidebar-action-row">', unsafe_allow_html=True)
+        pw_col, logout_col = st.columns(2, gap="small")
+        with pw_col:
+            if st.button("🔑 PW", help="Change Password", use_container_width=True):
+                st.session_state["_page_override"] = "change_password"; st.rerun()
+        with logout_col:
+            if st.button("🚪 Logout", use_container_width=True):
+                for k in ["email","role","name","theme"]: st.session_state.pop(k,None)
+                st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
     if   current_page == "Dashboard":     page_dashboard()
     elif current_page == "Submit Idea":   page_submit()
