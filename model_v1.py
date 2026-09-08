@@ -1632,20 +1632,14 @@ def page_login():
                         st.rerun()
 
 col1, col2, col3 = st.columns(3)
+        with col2:
+            if st.button("🔑 Change Password"):
+                st.session_state["_page_override"] = "change_password"; st.rerun()
+        with col3:
+            if st.button("📝 Register"):
+                st.session_state["_page_override"] = "register"; st.rerun()
 
-with col2:
-    if st.button("🔑 Change Password", use_container_width=True):
-        st.session_state["_page_override"] = "change_password"
-        st.rerun()
-
-with col3:
-    if st.button("📝 Register", use_container_width=True):
-        st.session_state["_page_override"] = "register"
-        st.rerun()
-
-st.markdown("<br>", unsafe_allow_html=True)
-
-st.markdown(
+        st.markdown(
             f'<p style="font-size:clamp(9px,0.8vw,10px);text-align:center;color:#94a3b8;margin-top:6px;">'
             f'For queries: <a href="mailto:{SUPPORT_EMAIL}" style="color:#00AEEF;">'
             f'{SUPPORT_NAME} — {SUPPORT_EMAIL}</a></p>',
