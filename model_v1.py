@@ -36,10 +36,6 @@ footer {
     visibility: hidden !important;
 }
 
-/* Keep header visible for sidebar toggle */
-[data-testid="stHeader"] {
-    background: transparent !important;
-}
 
 </style>
 """
