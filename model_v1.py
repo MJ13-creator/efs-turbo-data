@@ -11,34 +11,29 @@ from supabase import create_client, Client
 st.markdown("""
 <style>
 
-/* Hide Streamlit menu, toolbar, footer */
+/* Hide unwanted Streamlit UI */
 #MainMenu,
 footer,
 div[data-testid="stToolbar"],
 div[data-testid="stDecoration"],
-div[data-testid="stStatusWidget"]{
-    display:none !important;
+div[data-testid="stStatusWidget"] {
+    display: none !important;
 }
 
-/* Keep header alive */
-header,
-[data-testid="stHeader"]{
-    visibility:visible !important;
-    display:block !important;
-    background:transparent !important;
+/* Keep the header alive */
+[data-testid="stHeader"] {
+    background: transparent !important;
+    visibility: visible !important;
+    display: block !important;
+    z-index: 999999 !important;
 }
 
-/* Make header minimal */
-[data-testid="stHeader"]{
-    height:40px !important;
-}
-
-/* Force sidebar toggle button visibility */
-button[kind="header"],
-[data-testid="stSidebarCollapsedControl"]{
-    display:flex !important;
-    visibility:visible !important;
-    opacity:1 !important;
+/* Always show sidebar toggle */
+[data-testid="stSidebarCollapsedControl"] {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 999999 !important;
 }
 
 </style>
