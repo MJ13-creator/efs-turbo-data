@@ -7,6 +7,8 @@ from streamlit_sortables import sort_items
 from werkzeug.security import generate_password_hash, check_password_hash
 from supabase import create_client, Client
 
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 #  CONFIG / CONSTANTS
 # ══════════════════════════════════════════════════════════════════════════════
@@ -2693,7 +2695,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
                     "labelLine": {"length": 10, "length2": 8},
                     "itemStyle": {"borderColor": "#fff", "borderWidth": 2},
                 }]
-            }, height="400px")
+            }, height="440px")
 
         with chart2:
             # ── Customer → Project Hierarchy (each customer appears once,
@@ -2812,7 +2814,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
         var entry = {{ name: nm, value: val, roi: roi }};
         if (val > 0) {{
           entry.label = {{
-            show: true, formatter: nm + '\\n' + val, fontSize: 9, fontWeight: 700,
+            show: true, formatter: nm + '\\n' + val, fontSize: 12, fontWeight: 700,
             color: '#0f172a', backgroundColor: '#ffffff', padding: [4, 8],
             borderRadius: 6, lineHeight: 15
           }};
@@ -2826,7 +2828,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
         backgroundColor: 'transparent',
         tooltip: {{
           trigger: 'item',
-          textStyle: {{ fontSize: 9 }},
+          textStyle: {{ fontSize: 13 }},
           formatter: function(p){{
             if (!p.value) return p.name + '<br/>No ideas yet';
             var pct = totalCount ? ((p.value / totalCount) * 100).toFixed(1) : 0;
@@ -2855,7 +2857,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
     }});
 </script>
 </body></html>"""
-            st.components.v1.html(_region_map_html, height=430, scrolling=False)
+            st.components.v1.html(_region_map_html, height=400, scrolling=False)
 
             if active_regions:
                 st.caption("📍 " + "  ·  ".join(
@@ -2984,8 +2986,9 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
             render_kanban_board(ideas)
 
     # ══════════════════════════════════════════════════════════════════════
-    # PAGE 4 — WORKFLOW  (horizontal flow diagram — fits dashboard view)
-    # Moved from the sidebar "Workflow" page into the dashboard tab.
+    # PAGE 4 — WORKFLOW  (full vertical flow diagram, scrollable — not
+    # squeezed into a horizontal layout; this is the same detailed diagram
+    # used on the standalone Workflow page, shown here inside the tab.)
     # ══════════════════════════════════════════════════════════════════════
     elif dashboard_view == "Workflow":
         _wf_html = """<!DOCTYPE html>
@@ -3771,9 +3774,8 @@ html,body{background:#070b14;color:#e2e8f0;font-family:'Inter',sans-serif;min-he
 </script>
 </body>
 </html>
-
-        """
-        st.components.v1.html(_wf_html, height=560, scrolling=False)
+"""
+        st.components.v1.html(_wf_html, height=2900, scrolling=True)
 
     render_copyright()
 
@@ -4597,7 +4599,7 @@ html,body{background:#070b14;color:#e2e8f0;font-family:'Inter',sans-serif;min-he
 </body>
 </html>
     """
-    st.components.v1.html(_workflow_html, height=3600, scrolling=True)
+    st.components.v1.html(_workflow_html, height=2800, scrolling=True)
     render_copyright()
 
 # ══════════════════════════════════════════════════════════════════════════════
