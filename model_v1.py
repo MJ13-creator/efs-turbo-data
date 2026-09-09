@@ -2737,7 +2737,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
                          "label": {"fontSize": 12, "fontWeight": 600}},
                     ],
                 }]
-            }, height="440px")
+            }, height="400px")
 
         with chart3:
             # ── Region World Map — choropleth, with a readable legend and
