@@ -8,40 +8,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from supabase import create_client, Client
 
 
-hide_streamlit_elements = """
-<style>
-
-/* Hide Streamlit toolbar */
-div[data-testid="stToolbar"] {
-    display: none !important;
-}
-
-/* Hide decoration */
-div[data-testid="stDecoration"] {
-    display: none !important;
-}
-
-/* Hide status widget */
-div[data-testid="stStatusWidget"] {
-    display: none !important;
-}
-
-/* Hide hamburger menu */
-#MainMenu {
-    visibility: hidden !important;
-}
-
-/* Hide footer */
-footer {
-    visibility: hidden !important;
-}
-
-
-</style>
-"""
-
-st.markdown(hide_streamlit_elements, unsafe_allow_html=True)
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  CONFIG / CONSTANTS
