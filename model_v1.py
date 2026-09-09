@@ -12,9 +12,17 @@ hide_streamlit_style = """
 div[data-testid="stToolbar"] {visibility: hidden; height: 0%; position: fixed;}
 div[data-testid="stDecoration"] {visibility: hidden; height: 0%; position: fixed;}
 div[data-testid="stStatusWidget"] {visibility: hidden; height: 0%; position: fixed;}
-
-header {visibility: hidden; height: 0%;}
+#MainMenu {visibility: hidden; height: 0%;}
 footer {visibility: hidden; height: 0%;}
+/* NOTE: the main <header> is intentionally NOT hidden — it hosts the
+   sidebar's collapse/expand control. Hiding it (as this block used to do
+   with `header {visibility:hidden;height:0%}`) was the root cause of the
+   "sidebar not visible" issue: once a user collapsed the sidebar, or on
+   any screen narrow enough to auto-collapse it, there was no control left
+   to bring it back. Only the header's own background is neutralised below
+   so it stays functional but visually blends into the page. */
+[data-testid="stHeader"]{background:transparent !important;height:auto !important;visibility:visible !important;}
+[data-testid="stSidebarCollapsedControl"]{visibility:visible !important;display:flex !important;}
 </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
@@ -262,6 +270,12 @@ def update_role(email, role):
 
 def update_manual_type(email, manual_type):
     get_supabase().table("users").update({"manual_type":manual_type}).eq("email",email.lower()).execute()
+
+def update_user_email(old_email, new_email):
+    """Reset a user's registered email (the table's primary key). Postgres
+    allows updating a primary-key column via UPDATE, so this is a plain
+    update rather than a delete+insert."""
+    get_supabase().table("users").update({"email": new_email.lower()}).eq("email", old_email.lower()).execute()
 
 def set_password(email, new_pw):
     get_supabase().table("users").update({"password_hash":generate_password_hash(new_pw)}).eq("email",email.lower()).execute()
@@ -1631,12 +1645,11 @@ def page_login():
                         st.success("Welcome!")
                         st.rerun()
 
-        sp1, col1, col2, sp2, sp3 = st.columns([2, 2, 2, 2, 2])
-
-        with col1:
-            if st.button("🔑 Change Password"):
-                st.session_state["_page_override"] = "change_password"; st.rerun()
+        col1, col2, col3 = st.columns(3)
         with col2:
+            if st.button("🔑 Reset Credentials"):
+                st.session_state["_page_override"] = "reset_credentials"; st.rerun()
+        with col3:
             if st.button("📝 Register"):
                 st.session_state["_page_override"] = "register"; st.rerun()
 
@@ -1683,34 +1696,96 @@ def page_register():
     render_copyright()
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  PAGE: CHANGE PASSWORD
+#  PAGE: RESET CREDENTIALS  (replaces the old single "Change Password" page)
 # ══════════════════════════════════════════════════════════════════════════════
-def page_change_password():
-    page_header("Change Password")
-    prefill = ss("email","")
-    with st.form("cpw_form"):
-        email  = st.text_input("Email", value=prefill)
-        cur_pw = st.text_input("Current Password", type="password")
-        new_pw = st.text_input("New Password", type="password")
-        cnf_pw = st.text_input("Confirm New Password", type="password")
-        if st.form_submit_button("Update Password", use_container_width=True):
-            if not all([email,cur_pw,new_pw,cnf_pw]):
-                st.error("All fields required.")
-            elif new_pw != cnf_pw:
-                st.error("New passwords do not match.")
+def page_reset_credentials():
+    page_header("Reset Credentials 🔑")
+    choice = ss("_reset_credentials_choice")
+
+    # ── Step 1: choose what to reset ───────────────────────────────────────
+    if not choice:
+        st.caption("Choose what you'd like to reset.")
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("🔒 Reset Password", use_container_width=True):
+                st.session_state["_reset_credentials_choice"] = "password"; st.rerun()
+        with c2:
+            if st.button("📧 Reset Email ID", use_container_width=True):
+                st.session_state["_reset_credentials_choice"] = "email"; st.rerun()
+        if st.button("← Back to Login"):
+            st.session_state.pop("_page_override",None); st.rerun()
+        render_copyright(); return
+
+    # ── Step 2a: Reset Password — just the new password ────────────────────
+    if choice == "password":
+        st.markdown("##### Reset Password")
+        prefill = ss("email","")
+        with st.form("reset_pw_form"):
+            email  = st.text_input("Email", value=prefill, disabled=bool(prefill))
+            new_pw = st.text_input("New Password", type="password")
+            bcol1, bcol2 = st.columns(2)
+            with bcol1:
+                submit_clicked = st.form_submit_button("Submit", use_container_width=True)
+            with bcol2:
+                cancel_clicked = st.form_submit_button("Cancel", use_container_width=True)
+
+        if cancel_clicked:
+            st.session_state.pop("_reset_credentials_choice", None); st.rerun()
+
+        if submit_clicked:
+            if not email or not new_pw:
+                st.error("Email and New Password are required.")
             elif len(new_pw) < 4:
-                st.error("Minimum 4 characters.")
+                st.error("Password must be at least 4 characters.")
             else:
-                resp = get_supabase().table("users").select("*").eq("email",email.lower()).execute()
+                resp = get_supabase().table("users").select("email").eq("email", email.lower()).execute()
                 if not resp.data:
                     st.error("Email not found.")
-                elif not check_password_hash(resp.data[0].get("password_hash") or "", cur_pw):
-                    st.error("🚫 Current password is incorrect.")
                 else:
                     set_password(email.lower(), new_pw)
-                    st.success("✅ Password changed successfully.")
-    if st.button("← Back"):
-        st.session_state.pop("_page_override",None); st.rerun()
+                    st.success("✅ Password reset successfully.")
+
+    # ── Step 2b: Reset Email ID — old email must match, new must be free ───
+    elif choice == "email":
+        st.markdown("##### Reset Email ID")
+        prefill_old = ss("email","")
+        with st.form("reset_email_form"):
+            old_email = st.text_input("Old Email ID", value=prefill_old, disabled=bool(prefill_old))
+            new_email = st.text_input("New Email ID", placeholder="you@company.com")
+            bcol1, bcol2 = st.columns(2)
+            with bcol1:
+                submit_clicked = st.form_submit_button("Submit", use_container_width=True)
+            with bcol2:
+                cancel_clicked = st.form_submit_button("Cancel", use_container_width=True)
+
+        if cancel_clicked:
+            st.session_state.pop("_reset_credentials_choice", None); st.rerun()
+
+        if submit_clicked:
+            if not old_email or not new_email:
+                st.error("Both Old and New Email ID are required.")
+            elif not is_email(new_email.strip()):
+                st.error("Please enter a valid New Email ID.")
+            else:
+                resp = get_supabase().table("users").select("email").eq("email", old_email.strip().lower()).execute()
+                if not resp.data:
+                    st.error("🚫 Old Email ID does not match any registered account.")
+                else:
+                    dup = get_supabase().table("users").select("email").eq("email", new_email.strip().lower()).execute()
+                    if dup.data:
+                        st.error("This email is already registered.")
+                    else:
+                        update_user_email(old_email.strip(), new_email.strip())
+                        # Keep the current session valid if a logged-in user just
+                        # renamed their own account.
+                        if ss("email","").lower() == old_email.strip().lower():
+                            st.session_state["email"] = new_email.strip().lower()
+                            st.session_state["name"]  = new_email.strip().split("@")[0].replace("."," ").title()
+                        st.success("✅ Email ID updated successfully.")
+
+    st.write("")
+    if st.button("← Back to Reset Options"):
+        st.session_state.pop("_reset_credentials_choice", None); st.rerun()
     render_copyright()
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -2619,6 +2694,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
             status_vals   = [cnt(s) for s in STATUSES]
             status_cols   = [STATUS_COLORS.get(s, "#888") for s in STATUSES]
             st_echarts({
+                "backgroundColor": "transparent",
                 "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"},
                 "series": [{
                     "type": "pie",
@@ -2659,6 +2735,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
                 })
 
             st_echarts({
+                "backgroundColor": "transparent",
                 "tooltip": {"trigger": "item", "formatter": "{b}: {c} idea(s)"},
                 "series": [{
                     "type": "sunburst",
@@ -2794,9 +2871,14 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
         def rs(r): return len([i for i in ideas if i.get("status")=="Rejected" and i.get("rejection_reason")==r])
         def add_label_boxes(node):
             color = node.get("itemStyle",{}).get("color","#FFFFFF")
+            # Larger, cleaner label boxes — bigger font, generous padding,
+            # a touch of letter-spacing and a subtle border so each node
+            # reads clearly at normal zoom without a jagged edge.
             node["label"] = {"show":True,"backgroundColor":color,"color":"#FFFFFF",
-                             "borderRadius":5,"padding":[4,8],"position":"inside",
-                             "align":"center","fontSize":10,"fontWeight":"bold"}
+                             "borderRadius":7,"padding":[8,14],"position":"inside",
+                             "align":"center","fontSize":14,"fontWeight":"bold",
+                             "fontFamily":"Inter, sans-serif","lineHeight":18,
+                             "borderColor":"rgba(255,255,255,.35)","borderWidth":1}
             for child in node.get("children",[]): add_label_boxes(child)
         tree_data = {
             "name":f"Ideation ({total})","itemStyle":{"color":"#1a4fad"},
@@ -2819,17 +2901,20 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
         add_label_boxes(tree_data)
         st_echarts({
             "backgroundColor":"transparent",
-            "tooltip":{"trigger":"item","triggerOn":"mousemove"},
+            "tooltip":{"trigger":"item","triggerOn":"mousemove","textStyle":{"fontSize":13}},
             "series":[{"type":"tree","data":[tree_data],
-                       "top":"5%","left":"7%","bottom":"5%","right":"15%",
+                       "top":"8%","left":"12%","bottom":"8%","right":"22%",
                        "orient":"LR",   # horizontal flow
                        "symbol":"rect","symbolSize":1,
-                       "lineStyle":{"color":"#f97316","width":2},
-                       "label":{"position":"left","verticalAlign":"middle","align":"right","fontSize":10},
-                       "leaves":{"label":{"position":"right","verticalAlign":"middle","align":"left","fontSize":9}},
+                       "nodeGap": 32,"layerPadding": 90,
+                       "lineStyle":{"color":"#f97316","width":2.5,"curveness":0.35},
+                       "label":{"position":"left","verticalAlign":"middle","align":"right","fontSize":14},
+                       "leaves":{"label":{"position":"right","verticalAlign":"middle","align":"left","fontSize":13}},
                        "emphasis":{"focus":"descendant"},
                        "expandAndCollapse":True,"animationDuration":550,"initialTreeDepth":2}]
-        }, height="330px")
+        }, height="420px")
+
+
 
     # ══════════════════════════════════════════════════════════════════════
     # PAGE 3 — IDEA MANAGEMENT
@@ -4176,7 +4261,7 @@ def main():
 
     override = ss("_page_override")
     if override == "register":    page_register(); return
-    if override == "change_password": page_change_password(); return
+    if override == "reset_credentials": page_reset_credentials(); return
     if not logged_in():           page_login(); return
 
     # ── Session timeout check (every rerun = activity signal) ─────────────
@@ -4250,16 +4335,17 @@ def main():
             unsafe_allow_html=True
         )
 
-        # PW & Logout live below "Queries?" as one evenly-spaced horizontal
-        # row — plain buttons, not boxed/bordered column blocks.
+        # Reset Credentials & Logout live below "Queries?" as one evenly-spaced
+        # horizontal row — plain buttons, not boxed/bordered column blocks.
         st.markdown('<div class="sidebar-action-row">', unsafe_allow_html=True)
         pw_col, logout_col = st.columns(2, gap="small")
         with pw_col:
-            if st.button("🔑 PW", help="Change Password", use_container_width=True):
-                st.session_state["_page_override"] = "change_password"; st.rerun()
+            if st.button("🔑 Reset", help="Reset Credentials", use_container_width=True):
+                st.session_state["_page_override"] = "reset_credentials"; st.rerun()
         with logout_col:
             if st.button("🚪 Logout", use_container_width=True):
-                for k in ["email","role","name","theme"]: st.session_state.pop(k,None)
+                for k in ["email","role","name","theme","_page_override","_reset_credentials_choice"]:
+                    st.session_state.pop(k,None)
                 st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
