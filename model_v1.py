@@ -4597,7 +4597,7 @@ html,body{background:#070b14;color:#e2e8f0;font-family:'Inter',sans-serif;min-he
 </body>
 </html>
     """
-    st.components.v1.html(_workflow_html, height=2800, scrolling=True)
+    st.components.v1.html(_workflow_html, height=3600, scrolling=True)
     render_copyright()
 
 # ══════════════════════════════════════════════════════════════════════════════
