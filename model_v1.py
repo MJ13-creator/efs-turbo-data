@@ -7,7 +7,51 @@ from streamlit_sortables import sort_items
 from werkzeug.security import generate_password_hash, check_password_hash
 from supabase import create_client, Client
 
+hide_streamlit_style = """
+<style>
+div[data-testid="stToolbar"] {visibility: hidden; height: 0%; position: fixed;}
+div[data-testid="stDecoration"] {visibility: hidden; height: 0%; position: fixed;}
+div[data-testid="stStatusWidget"] {visibility: hidden; height: 0%; position: fixed;}
+#MainMenu {visibility: hidden; height: 0%;}
+footer {visibility: hidden; height: 0%;}
+/* NOTE: the main <header> is intentionally NOT hidden — it hosts the
+   sidebar's collapse/expand control. Hiding it (as this block used to do
+   with `header {visibility:hidden;height:0%}`) was the root cause of the
+   "sidebar not visible" issue: once a user collapsed the sidebar, or on
+   any screen narrow enough to auto-collapse it, there was no control left
+   to bring it back. Only the header's own background is neutralised below
+   so it stays functional but visually blends into the page. */
+[data-testid="stHeader"]{background:transparent !important;height:auto !important;visibility:visible !important;}
 
+/* ══ Classic sidebar open/close control — always visible, both states ══
+   Covers current and older Streamlit test-ids so the ">" (open, shown when
+   collapsed) and "<" (close, shown inside the sidebar when open) arrows
+   both render as a normal clickable button regardless of theme/CSS above. */
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="collapsedControl"]{
+    visibility:visible !important;display:flex !important;opacity:1 !important;
+    z-index:999999 !important;
+    background:#ffffff !important;border:1.5px solid #cbd5e1 !important;
+    border-radius:8px !important;box-shadow:0 2px 8px rgba(0,0,0,.12) !important;
+}
+[data-testid="stSidebarCollapsedControl"] button,
+[data-testid="collapsedControl"] button,
+[data-testid="stSidebarCollapsedControl"] svg,
+[data-testid="collapsedControl"] svg{
+    visibility:visible !important;opacity:1 !important;color:#0f172a !important;fill:#0f172a !important;
+}
+[data-testid="stSidebar"] [data-testid="stSidebarHeader"],
+[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"],
+[data-testid="stSidebar"] button[kind="headerNoPadding"]{
+    visibility:visible !important;display:flex !important;opacity:1 !important;
+}
+[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] svg,
+[data-testid="stSidebar"] button[kind="headerNoPadding"] svg{
+    color:#0f172a !important;fill:#0f172a !important;
+}
+</style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  CONFIG / CONSTANTS
@@ -2670,78 +2714,85 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
 
 
         with chart1:
-            # ── Status Pie (moved from original) ──
-            st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Ideas by Status</span>", unsafe_allow_html=True)
+            # ── Status Pie — larger, more legible ──
+            st.markdown("<span style='font-size:clamp(12px,1.15vw,15px);font-weight:700;'>Ideas by Status</span>", unsafe_allow_html=True)
             status_labels = [s for s in STATUSES]
             status_vals   = [cnt(s) for s in STATUSES]
             status_cols   = [STATUS_COLORS.get(s, "#888") for s in STATUSES]
             st_echarts({
                 "backgroundColor": "transparent",
-                "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)"},
+                "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)", "textStyle": {"fontSize": 13}},
+                "legend": {
+                    "show": True, "bottom": 0, "left": "center",
+                    "itemWidth": 12, "itemHeight": 12, "itemGap": 14,
+                    "textStyle": {"fontSize": 11, "color": "#111827", "fontWeight": 600},
+                },
                 "series": [{
                     "type": "pie",
-                    "radius": ["35%", "72%"],
+                    "radius": ["38%", "78%"],
                     "center": ["50%", "42%"],
                     "data": [{"value": v, "name": l, "itemStyle": {"color": c}} for v, l, c in zip(status_vals, status_labels, status_cols)],
                     "label": {
                         "show": True,
-                        "fontSize": 9,
-                        "formatter": "{b}: {c}",
+                        "fontSize": 13,
+                        "fontWeight": 600,
+                        "formatter": "{b}\n{c}",
                         "color": "#111827",
+                        "lineHeight": 16,
                     },
-                    "labelLine": {"length": 5, "length2": 3},
+                    "labelLine": {"length": 10, "length2": 8},
+                    "itemStyle": {"borderColor": "#fff", "borderWidth": 2},
                 }]
-            }, height="320px")
+            }, height="440px")
 
         with chart2:
-            # ── Project → Customer Hierarchy (nested PIE / sunburst chart) ──
-            st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Project → Customer (Hierarchy)</span>", unsafe_allow_html=True)
-            project_customer_map = {}
-            project_customer_roi = {}
+            # ── Customer → Project Hierarchy (each customer appears once,
+            #    all its projects grouped underneath as the inner ring) ──
+            st.markdown("<span style='font-size:clamp(12px,1.15vw,15px);font-weight:700;'>Customer → Project (Hierarchy)</span>", unsafe_allow_html=True)
+            customer_project_map = {}
             for i in ideas:
                 project = i.get("project", "") or "Others"
                 customer = i.get("customer", "") or "Unknown"
-                project_customer_map.setdefault(project, {}).setdefault(customer, 0)
-                project_customer_map[project][customer] += 1
-                project_customer_roi.setdefault(project, {}).setdefault(customer, 0.0)
-                project_customer_roi[project][customer] += float(i.get("roi",0) or 0)
+                customer_project_map.setdefault(customer, {}).setdefault(project, 0)
+                customer_project_map[customer][project] += 1
 
-            PROJECT_RING_COLORS = ["#1a4fad","#7c3aed","#059669","#0d9488","#0ea5e9","#b45309","#dc2626","#0891b2"]
+            CUSTOMER_RING_COLORS = ["#1a4fad","#7c3aed","#059669","#0d9488","#0ea5e9","#b45309","#dc2626","#0891b2"]
             sunburst_data = []
-            for idx, (proj, cust_map) in enumerate(project_customer_map.items()):
-                children = [{"name": c, "value": v} for c, v in cust_map.items()]
+            for idx, (cust, proj_map) in enumerate(customer_project_map.items()):
+                children = [{"name": p, "value": v} for p, v in proj_map.items()]
                 sunburst_data.append({
-                    "name": proj,
-                    "itemStyle": {"color": PROJECT_RING_COLORS[idx % len(PROJECT_RING_COLORS)]},
+                    "name": cust,
+                    "itemStyle": {"color": CUSTOMER_RING_COLORS[idx % len(CUSTOMER_RING_COLORS)]},
                     "children": children,
                 })
 
             st_echarts({
                 "backgroundColor": "transparent",
-                "tooltip": {"trigger": "item", "formatter": "{b}: {c} idea(s)"},
+                "tooltip": {"trigger": "item", "formatter": "{b}: {c} idea(s)", "textStyle": {"fontSize": 13}},
                 "series": [{
                     "type": "sunburst",
-                    "radius": ["12%", "90%"],
+                    "radius": ["14%", "90%"],
                     "center": ["50%", "50%"],
                     "data": sunburst_data,
                     "sort": None,
                     "emphasis": {"focus": "ancestor"},
-                    "label": {"rotate": "radial", "fontSize": 9, "color": "#fff", "minAngle": 8},
+                    "label": {"rotate": "radial", "fontSize": 12, "color": "#fff", "minAngle": 8, "fontWeight": 600},
                     "levels": [
                         {},
-                        {"r0": "12%", "r": "48%",
+                        {"r0": "14%", "r": "50%",
                          "itemStyle": {"borderWidth": 2, "borderColor": "#fff"},
-                         "label": {"fontSize": 10, "fontWeight": 700}},
-                        {"r0": "48%", "r": "90%",
+                         "label": {"fontSize": 14, "fontWeight": 800}},
+                        {"r0": "50%", "r": "90%",
                          "itemStyle": {"borderWidth": 1, "borderColor": "#fff"},
-                         "label": {"fontSize": 8}},
+                         "label": {"fontSize": 12, "fontWeight": 600}},
                     ],
                 }]
-            }, height="320px")
+            }, height="440px")
 
         with chart3:
-            # ── Region World Map — auto-aligned choropleth (no manual coordinates) ──
-            st.markdown("<span style='font-size:clamp(10px,1vw,13px);font-weight:600;'>Region-World Map</span>", unsafe_allow_html=True)
+            # ── Region World Map — choropleth, with a readable legend and
+            #    exact counts labelled directly on the active regions ──────
+            st.markdown("<span style='font-size:clamp(12px,1.15vw,15px);font-weight:700;'>Region — World Map</span>", unsafe_allow_html=True)
             region_data = {}
             for i in ideas:
                 r = (i.get("region","") or "").strip()
@@ -2767,6 +2818,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
                 "Germany": round(region_data.get("GERMANY", {"roi":0.0})["roi"], 1),
             }
             active_regions = {k: v for k, v in region_counts.items() if v > 0}
+            total_region_count = sum(region_counts.values()) or 1
 
             # This map fetches real country boundary GeoJSON at render time and
             # matches each country by name (fuzzy keyword match) to our region
@@ -2778,7 +2830,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
 <style>
   *{{margin:0;padding:0;box-sizing:border-box;}}
   html,body{{background:transparent;font-family:'Inter',sans-serif;}}
-  #wmap{{width:100%;height:300px;border-radius:16px;overflow:hidden;background:#0b1222;}}
+  #wmap{{width:100%;height:420px;border-radius:16px;overflow:hidden;background:#0b1222;}}
   #wmap-msg{{color:#94a3b8;font-size:11px;padding:16px;text-align:center;}}
 </style></head>
 <body>
@@ -2786,6 +2838,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
 <script>
   var valueByRegion = {json.dumps(region_counts)};
   var roiByRegion   = {json.dumps(region_roi)};
+  var totalCount    = {total_region_count};
   var regionKeywords = {{
     'India':   ['india'],
     'USA':     ['united states', 'usa'],
@@ -2806,7 +2859,15 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
             roi = roiByRegion[key] || 0;
           }}
         }}
-        return {{ name: nm, value: val, roi: roi }};
+        var entry = {{ name: nm, value: val, roi: roi }};
+        if (val > 0) {{
+          entry.label = {{
+            show: true, formatter: nm + '\\n' + val, fontSize: 12, fontWeight: 700,
+            color: '#0f172a', backgroundColor: '#ffffff', padding: [4, 8],
+            borderRadius: 6, lineHeight: 15
+          }};
+        }}
+        return entry;
       }});
       var maxVal = Math.max.apply(null, Object.keys(valueByRegion).map(function(k){{return valueByRegion[k];}}).concat([1]));
       document.getElementById('wmap').innerHTML = '';
@@ -2815,19 +2876,25 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
         backgroundColor: 'transparent',
         tooltip: {{
           trigger: 'item',
+          textStyle: {{ fontSize: 13 }},
           formatter: function(p){{
-            if (!p.value) return p.name;
-            return p.name + '<br/>Ideas: <b>' + p.value + '</b><br/>ROI: <b>' + (p.data.roi||0) + '</b>';
+            if (!p.value) return p.name + '<br/>No ideas yet';
+            var pct = totalCount ? ((p.value / totalCount) * 100).toFixed(1) : 0;
+            return '<b>' + p.name + '</b><br/>Ideas: <b>' + p.value + '</b> (' + pct + '%)<br/>ROI: <b>' + (p.data.roi||0) + '</b>';
           }}
         }},
         visualMap: {{
-          min: 0, max: maxVal, show: false,
-          inRange: {{ color: ['#111827', '#facc15'] }}
+          min: 0, max: maxVal, show: true, calculable: true,
+          orient: 'horizontal', left: 'center', bottom: 6,
+          text: ['High', 'Low'],
+          textStyle: {{ color: '#e2e8f0', fontSize: 11, fontWeight: 600 }},
+          inRange: {{ color: ['#1e293b', '#0891b2', '#22d3ee', '#facc15'] }}
         }},
         series: [{{
           type: 'map', map: 'world', roam: true, zoom: 1.15,
-          emphasis: {{ label: {{ show: false }}, itemStyle: {{ areaColor: '#fbbf24' }} }},
+          emphasis: {{ label: {{ show: true, color: '#0f172a', fontWeight: 700 }}, itemStyle: {{ areaColor: '#fbbf24' }} }},
           itemStyle: {{ areaColor: '#111827', borderColor: '#334155', borderWidth: 0.6 }},
+          label: {{ show: false }},
           data: mapData
         }}]
       }});
@@ -2838,10 +2905,13 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
     }});
 </script>
 </body></html>"""
-            st.components.v1.html(_region_map_html, height=310, scrolling=False)
+            st.components.v1.html(_region_map_html, height=430, scrolling=False)
 
             if active_regions:
-                st.caption("📍 " + "  ·  ".join(f"**{k}**: {v} idea(s)" for k, v in active_regions.items()))
+                st.caption("📍 " + "  ·  ".join(
+                    f"**{k}**: {v} idea(s) ({round(v/total_region_count*100,1)}%)"
+                    for k, v in active_regions.items()
+                ))
             else:
                 st.caption("No ideas with a region assigned yet.")
             if no_region_count:
