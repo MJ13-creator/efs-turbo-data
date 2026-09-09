@@ -2676,11 +2676,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
             st_echarts({
                 "backgroundColor": "transparent",
                 "tooltip": {"trigger": "item", "formatter": "{b}: {c} ({d}%)", "textStyle": {"fontSize": 13}},
-                "legend": {
-                    "show": True, "bottom": 0, "left": "center",
-                    "itemWidth": 12, "itemHeight": 12, "itemGap": 14,
-                    "textStyle": {"fontSize": 11, "color": "#111827", "fontWeight": 600},
-                },
+                
                 "series": [{
                     "type": "pie",
                     "radius": ["38%", "78%"],
