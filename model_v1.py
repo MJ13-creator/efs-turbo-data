@@ -7,6 +7,50 @@ from streamlit_sortables import sort_items
 from werkzeug.security import generate_password_hash, check_password_hash
 from supabase import create_client, Client
 
+import streamlit as st
+
+keep_sidebar_toggle_only = """
+<style>
+/* Hide Streamlit toolbar */
+div[data-testid="stToolbar"] {
+    display: none;
+}
+
+/* Hide decoration */
+div[data-testid="stDecoration"] {
+    display: none;
+}
+
+/* Hide status widget */
+div[data-testid="stStatusWidget"] {
+    display: none;
+}
+
+/* Hide main menu */
+#MainMenu {
+    visibility: hidden;
+}
+
+/* Hide footer */
+footer {
+    visibility: hidden;
+}
+
+/* Keep header only for sidebar toggle */
+[data-testid="stHeader"] {
+    background: transparent !important;
+}
+
+/* Ensure sidebar collapse/expand button stays visible */
+[data-testid="stSidebarCollapsedControl"] {
+    display: flex !important;
+    visibility: visible !important;
+}
+</style>
+"""
+
+st.markdown(keep_sidebar_toggle_only, unsafe_allow_html=True)
+
 
 
 # ══════════════════════════════════════════════════════════════════════════════
