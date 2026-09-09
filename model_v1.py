@@ -2693,7 +2693,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
                     "labelLine": {"length": 10, "length2": 8},
                     "itemStyle": {"borderColor": "#fff", "borderWidth": 2},
                 }]
-            }, height="440px")
+            }, height="400px")
 
         with chart2:
             # ── Customer → Project Hierarchy (each customer appears once,
@@ -2812,7 +2812,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
         var entry = {{ name: nm, value: val, roi: roi }};
         if (val > 0) {{
           entry.label = {{
-            show: true, formatter: nm + '\\n' + val, fontSize: 12, fontWeight: 700,
+            show: true, formatter: nm + '\\n' + val, fontSize: 9, fontWeight: 700,
             color: '#0f172a', backgroundColor: '#ffffff', padding: [4, 8],
             borderRadius: 6, lineHeight: 15
           }};
@@ -2826,7 +2826,7 @@ html,body{{width:100%;height:100%;overflow:hidden;background:#000;font-family:'I
         backgroundColor: 'transparent',
         tooltip: {{
           trigger: 'item',
-          textStyle: {{ fontSize: 13 }},
+          textStyle: {{ fontSize: 9 }},
           formatter: function(p){{
             if (!p.value) return p.name + '<br/>No ideas yet';
             var pct = totalCount ? ((p.value / totalCount) * 100).toFixed(1) : 0;
