@@ -8,36 +8,43 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from supabase import create_client, Client
 
 
-st.markdown("""
+hide_streamlit_elements = """
 <style>
 
-/* Hide unwanted Streamlit UI */
-#MainMenu,
-footer,
-div[data-testid="stToolbar"],
-div[data-testid="stDecoration"],
+/* Hide Streamlit toolbar */
+div[data-testid="stToolbar"] {
+    display: none !important;
+}
+
+/* Hide decoration */
+div[data-testid="stDecoration"] {
+    display: none !important;
+}
+
+/* Hide status widget */
 div[data-testid="stStatusWidget"] {
     display: none !important;
 }
 
-/* Keep the header alive */
-[data-testid="stHeader"] {
-    background: transparent !important;
-    visibility: visible !important;
-    display: block !important;
-    z-index: 999999 !important;
+/* Hide hamburger menu */
+#MainMenu {
+    visibility: hidden !important;
 }
 
-/* Always show sidebar toggle */
-[data-testid="stSidebarCollapsedControl"] {
-    display: flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    z-index: 999999 !important;
+/* Hide footer */
+footer {
+    visibility: hidden !important;
+}
+
+/* Keep header visible for sidebar toggle */
+[data-testid="stHeader"] {
+    background: transparent !important;
 }
 
 </style>
-""", unsafe_allow_html=True)
+"""
+
+st.markdown(hide_streamlit_elements, unsafe_allow_html=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
