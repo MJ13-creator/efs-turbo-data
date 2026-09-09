@@ -3219,7 +3219,7 @@ html,body{background:#070b14;color:#e2e8f0;font-family:'Inter',sans-serif;min-he
   </g>
 
   <!-- NO branch → Reject/Park (left) -->
-  <path d="M440,462 H240 V512" stroke="#ef4444" stroke-width="1.6" fill="none"
+  <path d="M440,462 H240 V538" stroke="#ef4444" stroke-width="1.6" fill="none"
         stroke-dasharray="5 3" marker-end="url(#ar)" opacity=".75"/>
   <text x="310" y="454" font-family="Space Grotesk" font-size="9.5"
         fill="#ef4444" font-weight="700">NO</text>
@@ -3402,7 +3402,7 @@ html,body{background:#070b14;color:#e2e8f0;font-family:'Inter',sans-serif;min-he
   <text x="640" y="1162" text-anchor="middle" font-family="Inter" font-size="8.5" fill="rgba(255,255,255,.4)">&amp; PL/SPL</text>
 
   <!-- NO → Reject/Park 2 (left) -->
-  <path d="M432,1186 H240 V1236" stroke="#ef4444" stroke-width="1.6" fill="none"
+  <path d="M432,1186 H240 V1261" stroke="#ef4444" stroke-width="1.6" fill="none"
         stroke-dasharray="5 3" marker-end="url(#ar)" opacity=".75"/>
   <g filter="url(#fr)">
     <rect x="160" y="1236" width="160" height="50" rx="10"
@@ -3582,7 +3582,7 @@ html,body{background:#070b14;color:#e2e8f0;font-family:'Inter',sans-serif;min-he
   </circle>
 
   <!-- FAIL branch: from left end of bar → Rework Sprint -->
-  <path d="M 270 1762 H 160 V 1850" stroke="#ef4444" stroke-width="1.5" fill="none"
+  <path d="M270 1762 H160 V1877" stroke="#ef4444" stroke-width="1.5" fill="none"
         stroke-dasharray="5 3" marker-end="url(#ar)" opacity=".7"/>
   <text x="185" y="1755" font-family="Space Grotesk" font-size="9"
         fill="#ef4444" font-weight="700">FAIL</text>
@@ -3597,7 +3597,7 @@ html,body{background:#070b14;color:#e2e8f0;font-family:'Inter',sans-serif;min-he
           font-size="9" fill="#64748b">Fix defects · Retest</text>
   </g>
   <!-- Rework loop back to circle top -->
-  <path d="M 160 1850 V 1570 H 270"
+  <path d="M80 1877 V1570 H270"
         stroke="#ef4444" stroke-width="1.2" fill="none"
         stroke-dasharray="4 3" marker-end="url(#av)" opacity=".4"/>
 
@@ -4181,8 +4181,17 @@ html,body{background:#070b14;color:#e2e8f0;font-family:'Inter',sans-serif;min-he
   </g>
 
   <!-- VSM → Feasibility (merge back to spine) -->
-  <path d="M765,868 V906 H530 V930" stroke="#10B981" stroke-width="1.5" fill="none"
-        stroke-dasharray="5 3" marker-end="url(#ab)" opacity=".6"/>
+  <path d="M765,868 V900 H610 V930"
+      stroke="#10B981"
+      stroke-width="1.5"
+      fill="none"
+      stroke-dasharray="5 3"
+      marker-end="url(#ab)"
+      opacity=".6"/>
+      <line x1="610" y1="930" x2="530" y2="930"
+      stroke="#10B981"
+      stroke-width="1"
+      opacity=".4"/>
 
   <!-- NO → direct to Feasibility -->
   <line x1="530" y1="764" x2="530" y2="930" stroke="#00D4FF" stroke-width="2"
@@ -4259,7 +4268,7 @@ html,body{background:#070b14;color:#e2e8f0;font-family:'Inter',sans-serif;min-he
   </g>
 
   <!-- NO → Reject/Park 2 (left) -->
-  <path d="M432,1186 H240 V1236" stroke="#ef4444" stroke-width="1.6" fill="none"
+  <path d="M432,1186 H240 V1261" stroke="#ef4444" stroke-width="1.6" fill="none"
         stroke-dasharray="5 3" marker-end="url(#ar)" opacity=".75"/>
   <g filter="url(#fr)">
     <rect x="160" y="1236" width="160" height="50" rx="10"
@@ -4444,7 +4453,7 @@ html,body{background:#070b14;color:#e2e8f0;font-family:'Inter',sans-serif;min-he
   <!-- PASS: from right tip of bar → Go Live -->
   <text x="808" y="1756" font-family="Space Grotesk" font-size="9"
         fill="#10B981" font-weight="700">PASS</text>
-  <path d="M 790 1762 H 830 V 1920 H 684"
+  <path d="M 790 1762 H 830 V 1956 H 684"
         stroke="#10B981" stroke-width="2" fill="none"
         marker-end="url(#ag)"/>
   <circle r="5" fill="#10B981">
@@ -4481,7 +4490,7 @@ html,body{background:#070b14;color:#e2e8f0;font-family:'Inter',sans-serif;min-he
   </g>
 
   <!-- Arrow Hypercare → Benefits Tracking -->
-  <line x1="530" y1="2106" x2="530" y2="2148" stroke="#00D4FF" stroke-width="2" marker-end="url(#ab)"/>
+  <line x1="530" y1="2106" x2="530" y2="2142" stroke="#00D4FF" stroke-width="2" marker-end="url(#ab)"/>
   <circle r="5" fill="#00D4FF">
     <animateMotion dur="1.4s" repeatCount="indefinite" begin=".8s" path="M530,2106 V2148"/>
     <animate attributeName="opacity" values="0;1;1;0" dur="1.4s" repeatCount="indefinite" begin=".8s"/>
@@ -4504,7 +4513,7 @@ html,body{background:#070b14;color:#e2e8f0;font-family:'Inter',sans-serif;min-he
   </g>
 
   <!-- Arrow Benefits → Continuous Improvement -->
-  <line x1="530" y1="2236" x2="530" y2="2278" stroke="#8B5CF6" stroke-width="2" marker-end="url(#av)"/>
+  <line x1="530" y1="2236" x2="530" y2="2272" stroke="#8B5CF6" stroke-width="2" marker-end="url(#av)"/>
   <circle r="5" fill="#8B5CF6">
     <animateMotion dur="1.4s" repeatCount="indefinite" begin="1.2s" path="M530,2236 V2278"/>
     <animate attributeName="opacity" values="0;1;1;0" dur="1.4s" repeatCount="indefinite" begin="1.2s"/>
@@ -4533,13 +4542,13 @@ html,body{background:#070b14;color:#e2e8f0;font-family:'Inter',sans-serif;min-he
         stroke="url(#loopg)" stroke-width="2.2" fill="none"
         stroke-dasharray="8 5" marker-end="url(#ao)" opacity=".6"/>
   <!-- Loop label rotated along the left rail -->
-  <text x="88" y="1280" font-family="Space Grotesk" font-size="10"
+  <text x="58" y="1280" font-family="Space Grotesk" font-size="10"
         fill="rgba(139,92,246,.55)" font-weight="700" letter-spacing="2"
         transform="rotate(-90,88,1280)">NEW IDEA LOOP ↑</text>
   <!-- Animated dot travelling the loop -->
   <circle r="5.5" fill="#8B5CF6" opacity=".75">
     <animateMotion dur="7s" repeatCount="indefinite"
-      path="M420,2354 H100 V148 H290"/>
+      <path d="M 420 2354 H 70 V 148 H 290"/>
     <animate attributeName="opacity" values="0;.75;.75;0" dur="7s" repeatCount="indefinite"/>
   </circle>
 
