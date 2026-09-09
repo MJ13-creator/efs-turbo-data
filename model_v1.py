@@ -7,50 +7,42 @@ from streamlit_sortables import sort_items
 from werkzeug.security import generate_password_hash, check_password_hash
 from supabase import create_client, Client
 
-import streamlit as st
 
-keep_sidebar_toggle_only = """
+st.markdown("""
 <style>
-/* Hide Streamlit toolbar */
-div[data-testid="stToolbar"] {
-    display: none;
+
+/* Hide Streamlit menu, toolbar, footer */
+#MainMenu,
+footer,
+div[data-testid="stToolbar"],
+div[data-testid="stDecoration"],
+div[data-testid="stStatusWidget"]{
+    display:none !important;
 }
 
-/* Hide decoration */
-div[data-testid="stDecoration"] {
-    display: none;
+/* Keep header alive */
+header,
+[data-testid="stHeader"]{
+    visibility:visible !important;
+    display:block !important;
+    background:transparent !important;
 }
 
-/* Hide status widget */
-div[data-testid="stStatusWidget"] {
-    display: none;
+/* Make header minimal */
+[data-testid="stHeader"]{
+    height:40px !important;
 }
 
-/* Hide main menu */
-#MainMenu {
-    visibility: hidden;
+/* Force sidebar toggle button visibility */
+button[kind="header"],
+[data-testid="stSidebarCollapsedControl"]{
+    display:flex !important;
+    visibility:visible !important;
+    opacity:1 !important;
 }
 
-/* Hide footer */
-footer {
-    visibility: hidden;
-}
-
-/* Keep header only for sidebar toggle */
-[data-testid="stHeader"] {
-    background: transparent !important;
-}
-
-/* Ensure sidebar collapse/expand button stays visible */
-[data-testid="stSidebarCollapsedControl"] {
-    display: flex !important;
-    visibility: visible !important;
-}
 </style>
-"""
-
-st.markdown(keep_sidebar_toggle_only, unsafe_allow_html=True)
-
+""", unsafe_allow_html=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
