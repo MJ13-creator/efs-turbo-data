@@ -7,52 +7,6 @@ from streamlit_sortables import sort_items
 from werkzeug.security import generate_password_hash, check_password_hash
 from supabase import create_client, Client
 
-hide_streamlit_style = """
-<style>
-div[data-testid="stToolbar"] {visibility: hidden; height: 0%; position: fixed;}
-div[data-testid="stDecoration"] {visibility: hidden; height: 0%; position: fixed;}
-div[data-testid="stStatusWidget"] {visibility: hidden; height: 0%; position: fixed;}
-#MainMenu {visibility: hidden; height: 0%;}
-footer {visibility: hidden; height: 0%;}
-/* NOTE: the main <header> is intentionally NOT hidden — it hosts the
-   sidebar's collapse/expand control. Hiding it (as this block used to do
-   with `header {visibility:hidden;height:0%}`) was the root cause of the
-   "sidebar not visible" issue: once a user collapsed the sidebar, or on
-   any screen narrow enough to auto-collapse it, there was no control left
-   to bring it back. Only the header's own background is neutralised below
-   so it stays functional but visually blends into the page. */
-[data-testid="stHeader"]{background:transparent !important;height:auto !important;visibility:visible !important;}
-
-/* ══ Classic sidebar open/close control — always visible, both states ══
-   Covers current and older Streamlit test-ids so the ">" (open, shown when
-   collapsed) and "<" (close, shown inside the sidebar when open) arrows
-   both render as a normal clickable button regardless of theme/CSS above. */
-[data-testid="stSidebarCollapsedControl"],
-[data-testid="collapsedControl"]{
-    visibility:visible !important;display:flex !important;opacity:1 !important;
-    z-index:999999 !important;
-    background:#ffffff !important;border:1.5px solid #cbd5e1 !important;
-    border-radius:8px !important;box-shadow:0 2px 8px rgba(0,0,0,.12) !important;
-}
-[data-testid="stSidebarCollapsedControl"] button,
-[data-testid="collapsedControl"] button,
-[data-testid="stSidebarCollapsedControl"] svg,
-[data-testid="collapsedControl"] svg{
-    visibility:visible !important;opacity:1 !important;color:#0f172a !important;fill:#0f172a !important;
-}
-[data-testid="stSidebar"] [data-testid="stSidebarHeader"],
-[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"],
-[data-testid="stSidebar"] button[kind="headerNoPadding"]{
-    visibility:visible !important;display:flex !important;opacity:1 !important;
-}
-[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] svg,
-[data-testid="stSidebar"] button[kind="headerNoPadding"] svg{
-    color:#0f172a !important;fill:#0f172a !important;
-}
-</style>
-"""
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-
 # ══════════════════════════════════════════════════════════════════════════════
 #  CONFIG / CONSTANTS
 # ══════════════════════════════════════════════════════════════════════════════
