@@ -22,7 +22,33 @@ footer {visibility: hidden; height: 0%;}
    to bring it back. Only the header's own background is neutralised below
    so it stays functional but visually blends into the page. */
 [data-testid="stHeader"]{background:transparent !important;height:auto !important;visibility:visible !important;}
-[data-testid="stSidebarCollapsedControl"]{visibility:visible !important;display:flex !important;}
+
+/* ══ Classic sidebar open/close control — always visible, both states ══
+   Covers current and older Streamlit test-ids so the ">" (open, shown when
+   collapsed) and "<" (close, shown inside the sidebar when open) arrows
+   both render as a normal clickable button regardless of theme/CSS above. */
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="collapsedControl"]{
+    visibility:visible !important;display:flex !important;opacity:1 !important;
+    z-index:999999 !important;
+    background:#ffffff !important;border:1.5px solid #cbd5e1 !important;
+    border-radius:8px !important;box-shadow:0 2px 8px rgba(0,0,0,.12) !important;
+}
+[data-testid="stSidebarCollapsedControl"] button,
+[data-testid="collapsedControl"] button,
+[data-testid="stSidebarCollapsedControl"] svg,
+[data-testid="collapsedControl"] svg{
+    visibility:visible !important;opacity:1 !important;color:#0f172a !important;fill:#0f172a !important;
+}
+[data-testid="stSidebar"] [data-testid="stSidebarHeader"],
+[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"],
+[data-testid="stSidebar"] button[kind="headerNoPadding"]{
+    visibility:visible !important;display:flex !important;opacity:1 !important;
+}
+[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] svg,
+[data-testid="stSidebar"] button[kind="headerNoPadding"] svg{
+    color:#0f172a !important;fill:#0f172a !important;
+}
 </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
@@ -1645,12 +1671,12 @@ def page_login():
                         st.success("Welcome!")
                         st.rerun()
 
-        col1, col2, col3 = st.columns(3)
-        with col2:
-            if st.button("🔑 Reset Credentials"):
+        col1, col2 = st.columns(2, gap="small")
+        with col1:
+            if st.button("🔑 Reset Credentials", use_container_width=True):
                 st.session_state["_page_override"] = "reset_credentials"; st.rerun()
-        with col3:
-            if st.button("📝 Register"):
+        with col2:
+            if st.button("📝 Register", use_container_width=True):
                 st.session_state["_page_override"] = "register"; st.rerun()
 
         st.markdown(
