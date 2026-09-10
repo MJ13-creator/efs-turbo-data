@@ -3604,12 +3604,12 @@ html,body{background:#070b14;color:#e2e8f0;font-family:'Inter',sans-serif;min-he
   <!-- PASS: from right tip of bar → Go Live -->
   <text x="808" y="1756" font-family="Space Grotesk" font-size="9"
         fill="#10B981" font-weight="700">PASS</text>
-  <path d="M 790 1762 H 830 V 1920 H 684"
+  <path d="M 790 1762 H 830 V 1956 H 684"
         stroke="#10B981" stroke-width="2" fill="none"
         marker-end="url(#ag)"/>
   <circle r="5" fill="#10B981">
     <animateMotion dur="2.4s" repeatCount="indefinite" begin=".5s"
-      path="M790,1762 H830 V1920 H684"/>
+      path="M790,1762 H830 V1956 H684"/>
     <animate attributeName="opacity" values="0;1;1;0" dur="2.4s" repeatCount="indefinite" begin=".5s"/>
   </circle>
 
@@ -4458,7 +4458,7 @@ html,body{background:#070b14;color:#e2e8f0;font-family:'Inter',sans-serif;min-he
         marker-end="url(#ag)"/>
   <circle r="5" fill="#10B981">
     <animateMotion dur="2.4s" repeatCount="indefinite" begin=".5s"
-      path="M790,1762 H830 V1920 H684"/>
+      path="M790,1762 H830 V1956 H684"/>
     <animate attributeName="opacity" values="0;1;1;0" dur="2.4s" repeatCount="indefinite" begin=".5s"/>
   </circle>
 
