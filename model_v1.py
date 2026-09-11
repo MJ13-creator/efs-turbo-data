@@ -794,7 +794,7 @@ def apply_theme(theme_name):
         border-radius:20px 20px 0 0;
     }}
     /* light reflection effect */
-    .kpi-card-v2::after{{
+    .kpi-card-v2::ar{{
         content:"";position:absolute;top:0;left:0;right:0;height:45%;
         background:linear-gradient(180deg,rgba(255,255,255,.42),rgba(255,255,255,0));
         border-radius:20px 20px 0 0;pointer-events:none;
@@ -923,7 +923,7 @@ def ss(key, default=None):
 #  triggers a rerun, and that rerun is what resets the timer here.
 # ══════════════════════════════════════════════════════════════════════════════
 SESSION_TIMEOUT_SECONDS = 600   # 5 minutes
-SESSION_WARNING_AT      = 340   # show warning after 4 minutes (60s before logout)
+SESSION_WARNING_AT      = 340   # show warning ar 4 minutes (60s before logout)
 
 def touch_activity():
     st.session_state["_last_activity"] = datetime.now()
@@ -1013,7 +1013,7 @@ def idea_hours(i):
             per_occurrence_savings = baseline - newp
         else:
             per_occurrence_savings = float(fd.get("manual",0) or 0)
-        return per_occurrence_savings * float(fd.get("fte",0) or 0) * FREQ_MULT.get(fd.get("freq","Daily"),1)
+        return per_occurrence_savings * float(fd.get("",0) or 0) * FREQ_MULT.get(fd.get("freq","Daily"),1)
     except: return 0
 
 def kpi_card(value, label, color, sub="", icon=""):
@@ -1197,7 +1197,7 @@ def _render_kpi_row(total, completed, completed_pct, cust_hrs, int_hrs, cust_roi
       z-index:3;
     }
     /* top light reflection */
-    .kpi-card-v2::after{
+    .kpi-card-v2::ar{
       content:"";position:absolute;top:0;left:0;right:0;height:45%;
       background:linear-gradient(180deg,rgba(255,255,255,.42),rgba(255,255,255,0));
       border-radius:22px 22px 0 0;pointer-events:none;
@@ -2125,7 +2125,7 @@ def page_feasibility():
                 per_occurrence = 0.0
                 if baseline and baseline > newp:
                     per_occurrence = baseline - newp
-                annual_saved = per_occurrence * fte * FREQ_MULT.get(freq, FREQ_MULT["Daily"])
+                annual_saved = per_occurrence * FREQ_MULT.get(freq, FREQ_MULT["Daily"])
                 roi = round((annual_saved / eng_ef) if eng_ef else 0.0, 2)
                 st.info(f"📈 Computed ROI: **{roi}**  —  Savings per occurrence: {per_occurrence} hrs  —  Annual saved hrs: {annual_saved:,.1f}")
 
