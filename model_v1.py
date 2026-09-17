@@ -2125,7 +2125,7 @@ def page_feasibility():
                 per_occurrence = 0.0
                 if baseline and baseline > newp:
                     per_occurrence = baseline - newp
-                annual_saved = per_occurrence * fte * FREQ_MULT.get(freq, FREQ_MULT["Daily"])
+                annual_saved = per_occurrence * 1 * FREQ_MULT.get(freq, FREQ_MULT["Daily"])
                 roi = round((annual_saved / eng_ef) if eng_ef else 0.0, 2)
                 st.info(f"📈 Computed ROI: **{roi}**  —  Savings per occurrence: {per_occurrence} hrs  —  Annual saved hrs: {annual_saved:,.1f}")
 
