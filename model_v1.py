@@ -40,7 +40,7 @@ MANUAL_TYPES = ["Manual", "Self-Registered", "Bulk Import", "System Default"]
 DEFAULT_PW = "admin123"
 
 SUPPORT_NAME  = "Manoj JAGADEESH, Raja AMMAIAPPAN, Naveen KONNUR"
-SUPPORT_EMAIL = "manoj.jagadeesh@alten-india.com"
+SUPPORT_EMAIL = "manoj.jagadeesh@alten.com"
 
 ALTEN_LOGO_URL = "https://www.alten.com/wp-content/uploads/2019/01/favicon-alten.png"
 
@@ -55,7 +55,7 @@ BLOCKED_DOMAINS = {
 
 ROLE_PAGES = {
     "super user":         ["Dashboard","Submit Idea","PL Assignment","Feasibility","Approval","Admin","OTP List","Deployed Tools"],
-    "normal user":        ["Dashboard","Submit Idea"],
+    "normal user":        ["Submit Idea","Deployed Tools"],
     "automation engineer":["Dashboard","Submit Idea","Feasibility","Deployed Tools"],
     "automation pl":      ["Dashboard","Submit Idea","PL Assignment","Feasibility","Approval","Deployed Tools"],
     "pl/spl":             ["Dashboard","Submit Idea","Approval","Deployed Tools"],
@@ -360,9 +360,52 @@ def rank_ideas(ideas):
         i["priority_rank"] = idx; i["priority_label"] = label
     return ordered
 
+def parse_engineers(value):
+    if isinstance(value, (list, tuple, set)):
+        values = value
+    else:
+        values = re.split(r"[,;]", str(value or ""))
+    engineers = []
+    seen = set()
+    for value in values:
+        email = str(value).strip()
+        if email and email.lower() not in seen:
+            engineers.append(email)
+            seen.add(email.lower())
+    return engineers
+
+def idea_engineers(idea):
+    return parse_engineers(idea.get("assigned_engineer", ""))
+
+def engineer_display(email):
+    return str(email).split("@")[0].replace(".", " ").title() if email else ""
+
+def engineers_display(idea):
+    return ", ".join(engineer_display(email) for email in idea_engineers(idea)) or "—"
+
+def save_engineer_assignments(idea, engineers, key_prefix):
+    current = idea_engineers(idea)
+    options = sorted(set(engineers) | set(current))
+    selected = st.multiselect(
+        "Automation Engineers",
+        options,
+        default=current,
+        format_func=engineer_display,
+        max_selections=2,
+        key=f"{key_prefix}_engineers_{idea['id']}",
+    )
+    if st.button("Save engineers", key=f"{key_prefix}_save_engineers_{idea['id']}"):
+        if not selected:
+            st.error("Select at least one automation engineer.")
+        else:
+            update_idea(idea["id"], {"assigned_engineer": ", ".join(selected)})
+            st.success("Engineer assignments updated.")
+            st.rerun()
+
 def compute_delivery(all_ideas, eng_email, new_idea):
+    engineers = {email.lower() for email in parse_engineers(eng_email)}
     active = [i for i in all_ideas
-              if i.get("assigned_engineer")==eng_email
+              if engineers.intersection(email.lower() for email in idea_engineers(i))
               and i.get("status") in {"Assigned","WIP","UAT","Hold/Park"}
               and i.get("id")!=new_idea.get("id")]
     combined = rank_ideas(active + [new_idea])
@@ -378,7 +421,9 @@ def compute_delivery(all_ideas, eng_email, new_idea):
 
 def engineer_queue(all_ideas, eng_email):
     active = rank_ideas([i for i in all_ideas
-                         if i.get("assigned_engineer")==eng_email
+                         if eng_email.lower() in {
+                             email.lower() for email in idea_engineers(i)
+                         }
                          and i.get("status") in {"Assigned","WIP","UAT","Hold/Park"}])
     cursor = next_workday(date.today()); out=[]
     for i in active:
@@ -419,7 +464,7 @@ Idea Name   : {idea.get('idea_name','')}
 Project     : {idea.get('project','')}
 Category    : {idea.get('category','')}
 Submitter   : {idea.get('name','')}
-Engineer    : {idea.get('assigned_engineer','')}
+Engineer(s) : {', '.join(idea_engineers(idea)) or '-'}
 PL / SPL    : {idea.get('pl_name','')}
 Feasibility Status : Submitted
 ROI         : {round(roi,2)}
@@ -445,7 +490,7 @@ Idea Name   : {idea.get('idea_name','')}
 Project     : {idea.get('project','')}
 Category    : {idea.get('category','')}
 Date        : {fmt_d(mdate)} at {times.get(mtype,'')}
-Engineer    : {idea.get('assigned_engineer','-')}
+Engineer(s) : {', '.join(idea_engineers(idea)) or '-'}
 PL / SPL    : {idea.get('pl_name','-')}"""
     return outlook_link(recipients, f"[Turbo Drive] {titles.get(mtype,'Meeting')}: {idea.get('idea_name','')} — {fmt_d(mdate)}", body)
 
@@ -1421,6 +1466,10 @@ def _parent_summary(parent, all_ideas):
     return {"children": n, "completion_pct": pct, "roi": roi, "hours": hrs}
 
 def render_kanban_board(ideas):
+    engineers = [
+        u["email"] for u in get_users()
+        if u.get("role") == "automation engineer" and u.get("email")
+    ]
     cols = st.columns(len(STATUSES))
     for col, status in zip(cols, STATUSES):
         color = STATUS_COLORS.get(status,"#888")
@@ -1447,19 +1496,18 @@ def render_kanban_board(ideas):
                 st.caption("_Empty_")
             top_level = [i for i in bucket if not i.get("parent_id") or i.get("parent_id") not in bucket_ids]
             for idea in top_level:
-                _render_kanban_card(idea, status, color, ideas, id_to_idea, depth=0)
+                _render_kanban_card(idea, status, color, ideas, id_to_idea, engineers, depth=0)
                 for child in _children_of(idea["id"], bucket):
-                    _render_kanban_card(child, status, color, ideas, id_to_idea, depth=1)
+                    _render_kanban_card(child, status, color, ideas, id_to_idea, engineers, depth=1)
 
     _render_kanban_nesting_ui(ideas)
 
-def _render_kanban_card(idea, status, color, all_ideas, id_to_idea, depth=0):
-    eng      = idea.get("assigned_engineer") or ""
+def _render_kanban_card(idea, status, color, all_ideas, id_to_idea, engineers, depth=0):
     proj     = idea.get("project") or "-"
     delivery = idea.get("delivery_date") or ""
     hold     = idea.get("hold_reason") or ""
     name     = idea.get("name") or "-"
-    eng_name = eng.split("@")[0] if "@" in eng else (eng or "—")
+    eng_name = engineers_display(idea)
     # Simple label: "Child Card" prefix for nested cards, card icon for top-level
     label_prefix = "↳ 📦 Child Card — " if depth > 0 else "📄 "
     label = label_prefix + (idea.get("idea_name") or "No Name")
@@ -1515,6 +1563,7 @@ def _render_kanban_card(idea, status, color, all_ideas, id_to_idea, depth=0):
                 st.rerun()
 
         st.divider()
+        save_engineer_assignments(idea, engineers, "kanban")
 
 def _render_kanban_nesting_ui(ideas):
     """Real drag-and-drop: drag a card into another card's box to tag it as
@@ -1661,7 +1710,7 @@ def page_register():
                 st.error("🚫 Free-mail providers (Gmail, Yahoo, Hotmail, Rediff, etc.) are not allowed. Please use your organisational email.")
             elif pw != cpw:
                 st.error("Passwords do not match.")
-            elif len(pw) < 4:
+            elif len(pw)< 4:
                 st.error("Password must be at least 4 characters.")
             else:
                 resp = get_supabase().table("users").select("email").eq("email",email.lower()).execute()
@@ -1857,7 +1906,7 @@ def page_pl_assignment():
             for eng in engineers:
                 active = len([
                     i for i in all_ideas
-                    if i.get("assigned_engineer") == eng
+                    if eng.lower() in {email.lower() for email in idea_engineers(i)}
                     and i.get("status") in {"Assigned", "WIP", "UAT", "Hold/Park"}
                 ])
                 load_rows.append({
@@ -1923,7 +1972,8 @@ def page_pl_assignment():
                         st.markdown(f"**Submitted by:** {idea.get('name','-')}")
                         st.markdown(f"**Project:** {idea.get('project','-')} | **Category:** {idea.get('category','-')}")
                         st.markdown(f"**Customer:** {idea.get('customer','-')} | **Region:** {idea.get('region','-')}")
-                        st.markdown(f"**Description:** {idea.get('idea','-')}")
+                        st.markdown("**Idea Description:**")
+                        st.text(idea.get("idea") or "-")
                     with c2:
                         st.markdown(f"**PL/SPL:** {idea.get('pl_name','-')}")
                         st.markdown(f"**Submitted:** {idea.get('created_date','-')[:10]}")
@@ -1951,6 +2001,19 @@ def page_pl_assignment():
                             st.success(f"Assigned to {eng}. Click 📤 Open in Outlook above to notify them.")
                             st.rerun()
 
+    wip_ideas = rank_ideas([i for i in all_ideas if i.get("status") == "WIP"])
+    if wip_ideas:
+        import pandas as pd
+        st.divider()
+        st.markdown("#### ⚙️ Current WIP Task Status")
+        st.dataframe(pd.DataFrame([{
+            "Idea": i.get("idea_name", ""),
+            "Project": i.get("project", ""),
+            "Automation Engineers": engineers_display(i),
+            "Status": i.get("status", "Unknown"),
+            "Delivery": i.get("delivery_date", ""),
+        } for i in wip_ideas]), use_container_width=True, hide_index=True)
+
     # ── Engineer Workload & Sprint Schedule ───────────────────────────────
     st.divider()
     st.markdown("#### 📅 Engineer Workload & Sprint Schedule")
@@ -1973,6 +2036,7 @@ def page_pl_assignment():
                 else:
                     df = pd.DataFrame([{
                         "Queue #":i["priority_rank"],"Idea":i.get("idea_name",""),
+                        "Status":i.get("status",""),
                         "Category":i.get("category",""),"Priority":i.get("priority_label",""),
                         "Sprint Start":fmt_d(i["sprint_start"]),"Delivery (Sprint End)":fmt_d(i["sprint_end"]),
                     } for i in queue])
@@ -1987,6 +2051,11 @@ def page_feasibility():
     page_header("Feasibility Study 🔍")
     all_ideas = get_all()
     assigned  = rank_ideas([i for i in all_ideas if i.get("status")=="Assigned"])
+    wip_ideas = rank_ideas([i for i in all_ideas if i.get("status")=="WIP"])
+    engineers = [
+        u["email"] for u in get_users()
+        if u.get("role") == "automation engineer" and u.get("email")
+    ]
 
     # ── Unified search — filters BOTH the engineer-wise line-items table
     #    and the idea cards ("ENG Rows") below from one input, in real time.
@@ -2004,9 +2073,14 @@ def page_feasibility():
         return " ".join(str(x) for x in [
             i.get("id",""), i.get("idea_name",""), i.get("name",""), i.get("submitter_email",""),
             i.get("project",""), i.get("category",""), i.get("status",""), i.get("assigned_engineer",""),
+            " ".join(engineer_display(email) for email in idea_engineers(i)),
             i.get("pl_name",""), i.get("priority_label",""), i.get("automation_category",""),
             fd.get("freq",""), draft.get("freq",""),
         ]).lower()
+
+    if q:
+        assigned = [i for i in assigned if q in _feas_search_blob(i)]
+        wip_ideas = [i for i in wip_ideas if q in _feas_search_blob(i)]
 
     st.markdown("#### 📊 Engineer-wise Feasibility Line Items")
     import pandas as pd
@@ -2014,8 +2088,9 @@ def page_feasibility():
     if q:
         line_item_ideas = [i for i in line_item_ideas if q in _feas_search_blob(i)]
     engineer_options = sorted({
-        ((i.get("assigned_engineer", "") or "-").split("@")[0]).replace(".", " ").title()
+        engineer_display(email)
         for i in line_item_ideas
+        for email in idea_engineers(i)
     })
     selected_engineers = st.multiselect(
         "Automation Engineer",
@@ -2025,16 +2100,16 @@ def page_feasibility():
     )
     eng_rows = []
     for i in line_item_ideas:
-        engineer_name = ((i.get("assigned_engineer", "") or "-").split("@")[0]).replace(".", " ").title()
-        if selected_engineers and engineer_name not in selected_engineers:
+        assigned_names = {engineer_display(email) for email in idea_engineers(i)}
+        if selected_engineers and not assigned_names.intersection(selected_engineers):
             continue
         fd = i.get("feasibility_data", {}) or {}
         draft = fd.get("_draft", {})
         eng_rows.append({
-            "Engineer": engineer_name,
+            "Engineer": engineers_display(i),
             "Idea": i.get("idea_name", ""),
             "Category": i.get("category", ""),
-            "Status": i.get("status", "") + (" (Draft saved)" if draft else ""),
+            "Status": (i.get("status", "") or "Unknown") + (" (Draft saved)" if draft else ""),
             "Baseline (hrs)": fd.get("baseline_process_time", draft.get("baseline_process_time", "")),
             "New Process (hrs)": fd.get("new_process_time", draft.get("new_process_time", "")),
             "FTE": fd.get("fte", draft.get("fte", "")),
@@ -2049,15 +2124,21 @@ def page_feasibility():
     else:
         st.caption("No feasibility line items yet.")
 
-    if not assigned:
-        st.info("No ideas pending feasibility study.")
-        render_copyright(); return
+    if wip_ideas:
+        st.markdown("#### ⚙️ In-progress tasks")
+        for idea in wip_ideas:
+            with st.expander(f"⚙️ {idea.get('idea_name','(no name)')} — WIP"):
+                st.markdown(f"**Status:** {idea.get('status', 'Unknown')}")
+                st.markdown(f"**Project:** {idea.get('project', '-')}")
+                st.markdown(f"**Assigned engineers:** {engineers_display(idea)}")
+                save_engineer_assignments(idea, engineers, "feasibility_wip")
 
-    if q:
-        assigned = [i for i in assigned if q in _feas_search_blob(i)]
-        if not assigned:
+    if not assigned:
+        if q and not wip_ideas:
             st.warning("No idea cards match your search.")
-            render_copyright(); return
+        elif not q:
+            st.info("No ideas pending feasibility study.")
+        render_copyright(); return
 
     if ss("_feas_outlook_url"):
         url = ss("_feas_outlook_url"); lbl = ss("_feas_outlook_label","")
@@ -2085,14 +2166,18 @@ def page_feasibility():
         fd = idea.get("feasibility_data", {}) or {}
         draft = fd.get("_draft", {})
         with st.expander(f"💡 {idea.get('idea_name','(no name)')}  —  {idea.get('priority_label','')}"):
+            st.markdown(f"**Status:** {idea.get('status', 'Unknown')}")
+            save_engineer_assignments(idea, engineers, "feasibility")
             st.markdown(f"""
             <div style="border-left:3px solid #1a4fad;padding:8px 12px;margin-bottom:10px;background:#f8fafc;border-radius:6px;">
               <b>Idea ID:</b> {idea.get('id','')}<br>
               <b>Submitted by:</b> {idea.get('name','-')} ({idea.get('submitter_email','-') or '-'})<br>
-              <b>Assigned Engineer:</b> {idea.get('assigned_engineer','-')}<br>
+              <b>Assigned Engineers:</b> {engineers_display(idea)}<br>
               <b>PL / SPL:</b> {idea.get('pl_name','-')}<br>
               <b>Category:</b> {idea.get('category','-')}
             </div>""", unsafe_allow_html=True)
+            st.markdown("**Idea Description:**")
+            st.text(idea.get("idea") or "-")
             if idea.get("delivery_date"):
                 st.caption(f"📅 Provisional delivery: {idea['delivery_date']}")
             if draft:
@@ -2147,7 +2232,7 @@ def page_feasibility():
 
                 if submit_clicked:
                     vsm_date = next_workday(date.today()+timedelta(days=1))
-                    qi = compute_delivery(all_ideas, idea.get("assigned_engineer",""), {**idea,"roi":roi})
+                    qi = compute_delivery(all_ideas, idea_engineers(idea), {**idea,"roi":roi})
                     update_idea(idea["id"],{
                         "status":"WIP","roi":roi,"automation_category":auto_cat,
                         "feasibility_comments":comments,
@@ -2176,10 +2261,13 @@ def page_feasibility():
             with st.expander("📅 Schedule a Meeting"):
                 participants_map = {
                     "Idea Submitter": idea.get("submitter_email", ""),
-                    "Assigned Engineer": idea.get("assigned_engineer", ""),
+                    "Assigned Engineer(s)": idea_engineers(idea),
                     "PL / SPL": idea.get("pl_name", ""),
                 }
-                valid_participants = {k: v for k, v in participants_map.items() if is_email(v)}
+                valid_participants = {
+                    k: parse_engineers(v) for k, v in participants_map.items()
+                    if any(is_email(email) for email in parse_engineers(v))
+                }
                 if not valid_participants:
                     st.caption("No valid participant emails on file for this idea yet.")
                 else:
@@ -2199,12 +2287,16 @@ def page_feasibility():
                         else:
                             start_dt = datetime.combine(m_date, m_time)
                             end_dt = start_dt + timedelta(minutes=int(m_dur))
-                            emails = [valid_participants[p] for p in m_attendees]
+                            emails = [
+                                email for participant in m_attendees
+                                for email in valid_participants[participant]
+                                if is_email(email)
+                            ]
                             body = f"""Meeting regarding: {idea.get('idea_name','')}
 
 Idea ID   : {idea.get('id','')}
 Category  : {idea.get('category','-')}
-Engineer  : {idea.get('assigned_engineer','-')}
+Engineer(s): {', '.join(idea_engineers(idea)) or '-'}
 PL / SPL  : {idea.get('pl_name','-')}
 
 Remarks:
@@ -2241,7 +2333,7 @@ def page_approval():
         with st.expander(f"💡 {idea.get('idea_name','(no name)')}  —  ROI: {round(idea.get('roi',0),2)}  |  {idea.get('priority_label','')}"):
             col1,col2 = st.columns(2)
             with col1:
-                st.markdown(f"**Engineer:** {idea.get('assigned_engineer','-')}")
+                st.markdown(f"**Engineer(s):** {engineers_display(idea)}")
                 st.markdown(f"**Category:** {idea.get('category','-')} / {idea.get('automation_category','-')}")
                 st.markdown(f"**Project:** {idea.get('project','-')}")
             with col2:
